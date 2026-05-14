@@ -76,24 +76,16 @@ def run_create_paused_draft(
         print(json.dumps(plan, indent=2, sort_keys=True))
         return 0
 
-    result = api.create_paused_draft_ad(
-        ad_account_id=ad_account_id,
+    result, artifact_path = create_paused_draft_ad_from_creative(
+        api,
+        config,
         creative_id=creative_id,
         campaign_name=campaign_name,
         adset_name=adset_name,
         ad_name=ad_name,
         daily_budget=daily_budget,
         country=country,
-    )
-
-    artifact_path = _save_paused_draft_artifact(
-        config=config,
         plan=plan,
-        campaign_id=result.campaign_id,
-        adset_id=result.adset_id,
-        ad_id=result.ad_id,
-        raw_responses=result.raw_responses,
-        response_log_paths=result.response_log_paths,
     )
 
     print()
@@ -108,6 +100,61 @@ def run_create_paused_draft(
     print()
     print("Open Meta Ads Manager and filter by the campaign name above.")
     return 0
+
+
+def create_paused_draft_ad_from_creative(
+    api: MetaAPI,
+    config: AppConfig,
+    *,
+    creative_id: str,
+    campaign_name: str,
+    adset_name: str,
+    ad_name: str,
+    daily_budget: int,
+    country: str,
+    plan: dict[str, object] | None = None,
+):
+    ad_account_id = require_ad_account_id(config)
+    result = api.create_paused_draft_ad(
+        ad_account_id=ad_account_id,
+        creative_id=creative_id,
+        campaign_name=campaign_name,
+        adset_name=adset_name,
+        ad_name=ad_name,
+        daily_budget=daily_budget,
+        country=country,
+    )
+
+    if plan is None:
+        plan = {
+            "campaign": {
+                "name": campaign_name,
+                "objective": "OUTCOME_TRAFFIC",
+                "status": "PAUSED",
+            },
+            "adset": {
+                "name": adset_name,
+                "daily_budget": daily_budget,
+                "country": country.upper(),
+                "status": "PAUSED",
+            },
+            "ad": {
+                "name": ad_name,
+                "creative": {"creative_id": creative_id},
+                "status": "PAUSED",
+            },
+        }
+
+    artifact_path = _save_paused_draft_artifact(
+        config=config,
+        plan=plan,
+        campaign_id=result.campaign_id,
+        adset_id=result.adset_id,
+        ad_id=result.ad_id,
+        raw_responses=result.raw_responses,
+        response_log_paths=result.response_log_paths,
+    )
+    return result, artifact_path
 
 
 def _save_paused_draft_artifact(

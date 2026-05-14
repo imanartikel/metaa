@@ -267,12 +267,18 @@ Command Telegram:
 ```text
 /id
 /draft product | offer | audience | landing_url
+/list_drafts
+/preview draft_id
+/push_draft draft_id
 ```
 
 Contoh:
 
 ```text
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
+/list_drafts
+/preview draft_20260514T231222Z_bengkel_mobil_wl
+/push_draft draft_20260514T231222Z_bengkel_mobil_wl
 ```
 
 Bot akan membuat:
@@ -284,6 +290,8 @@ assets/generated/draft_*.jpg
 ```
 
 Kalau `ANTHROPIC_API_KEY` ada di `.env`, Telegram `/draft` akan pakai Claude Haiku untuk copy dan creative direction. Kalau key kosong atau API error, bot fallback ke placeholder.
+
+`/push_draft` akan upload image, create creative, lalu create campaign/ad set/ad dalam status `PAUSED`. Command ini tidak pernah publish `ACTIVE`.
 
 ## Meta App Privacy Policy
 

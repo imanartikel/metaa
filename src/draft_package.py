@@ -138,19 +138,19 @@ def build_placeholder_draft(brief: dict[str, Any]) -> dict[str, Any]:
         notes="Claude/Vertex belum dipanggil. Ini draft rule-based untuk validasi pipeline.",
     )
     draft["strategy"] = {
-            "angle": f"Lead with clear offer for {audience}",
-            "customer_pain": pain_points,
-            "benefits": benefits,
-        }
+        "angle": f"Lead with clear offer for {audience}",
+        "customer_pain": pain_points,
+        "benefits": benefits,
+    }
     draft["creative"] = {
-            "name": f"{product_name} - Placeholder Creative",
-            "primary_text": primary_text,
-            "headline": headline,
-            "description": description,
-            "cta": cta,
-            "link_url": landing_url,
-            "url_tags": "utm_source=meta&utm_medium=paid_social&utm_campaign=ai_draft",
-            "image_prompt": image_prompt,
+        "name": f"{product_name} - Placeholder Creative",
+        "primary_text": primary_text,
+        "headline": headline,
+        "description": description,
+        "cta": cta,
+        "link_url": landing_url,
+        "url_tags": "utm_source=meta&utm_medium=paid_social&utm_campaign=ai_draft",
+        "image_prompt": image_prompt,
     }
     return draft
 

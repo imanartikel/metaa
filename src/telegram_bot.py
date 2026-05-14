@@ -9,7 +9,10 @@ from typing import Any
 import requests
 
 from config import AppConfig, require_telegram_bot_token
+from create_creative import _save_creative_artifact
+from create_paused_draft import create_paused_draft_ad_from_creative
 from draft_package import build_draft, generate_placeholder_image
+from meta_api import MetaAPI
 
 
 logger = logging.getLogger(__name__)
@@ -178,15 +181,29 @@ def _handle_text_command(config: AppConfig, *, user_id: int, text: str) -> str:
     if text == "/id":
         return f"user_id: {user_id}"
 
+    if text == "/list_drafts":
+        return _list_drafts(config)
+
+    if text.startswith("/preview"):
+        draft_ref = text.removeprefix("/preview").strip()
+        return _preview_draft(config, draft_ref)
+
+    if text.startswith("/push_draft"):
+        draft_ref = text.removeprefix("/push_draft").strip()
+        return _push_draft_to_meta(config, draft_ref)
+
     if text.startswith("/draft"):
         brief = _parse_draft_command(text)
         draft_path, image_path = _create_draft_from_telegram_brief(config, brief)
+        draft = _load_json(draft_path)
         return (
             "Draft package dibuat.\n"
+            f"draft_id: {draft.get('draft_id')}\n"
+            f"source: {draft.get('source', {}).get('type')}\n"
             f"draft_json: {draft_path}\n"
             f"placeholder_image: {image_path}\n\n"
-            "Review dulu. Untuk push creative ke Meta, jalankan lokal:\n"
-            f"python src/main.py create-creative-from-draft {draft_path}"
+            f"Review: /preview {draft.get('draft_id')}\n"
+            f"Push PAUSED ke Meta: /push_draft {draft.get('draft_id')}"
         )
 
     return "Command belum dikenal.\n\n" + _help_text(user_id)
@@ -198,9 +215,14 @@ def _help_text(user_id: int) -> str:
         f"user_id kamu: {user_id}\n\n"
         "Commands:\n"
         "/id - tampilkan user id\n"
-        "/draft product | offer | audience | landing_url\n\n"
+        "/draft product | offer | audience | landing_url\n"
+        "/list_drafts - lihat 5 draft terbaru\n"
+        "/preview draft_id - lihat copy draft\n"
+        "/push_draft draft_id - upload + create creative + create PAUSED ad\n\n"
         "Contoh:\n"
-        "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com"
+        "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com\n"
+        "/preview draft_20260514T231222Z_bengkel_mobil_wl\n"
+        "/push_draft draft_20260514T231222Z_bengkel_mobil_wl"
     )
 
 
@@ -272,3 +294,152 @@ def _create_draft_from_telegram_brief(
         file.write("\n")
 
     return draft_path, image_path
+
+
+def _list_drafts(config: AppConfig) -> str:
+    draft_paths = _latest_draft_paths(config, limit=5)
+    if not draft_paths:
+        return "Belum ada draft. Buat dulu pakai /draft product | offer | audience | landing_url"
+
+    lines = ["Draft terbaru:"]
+    for path in draft_paths:
+        try:
+            draft = _load_json(path)
+            source = draft.get("source", {}).get("type", "unknown")
+            creative = draft.get("creative", {})
+            headline = creative.get("headline", "no headline")
+            lines.append(f"- {draft.get('draft_id')} | {source} | {headline}")
+        except Exception:
+            lines.append(f"- {path.stem} | unreadable")
+    return "\n".join(lines)
+
+
+def _preview_draft(config: AppConfig, draft_ref: str) -> str:
+    path = _resolve_draft_path(config, draft_ref)
+    draft = _load_json(path)
+    creative = draft.get("creative", {})
+    strategy = draft.get("strategy", {})
+    image = draft.get("image", {})
+    source = draft.get("source", {})
+
+    return (
+        "Draft preview\n"
+        f"draft_id: {draft.get('draft_id')}\n"
+        f"source: {source.get('type')} {source.get('ai_model') or ''}\n"
+        f"angle: {strategy.get('angle', 'not returned')}\n\n"
+        f"headline: {creative.get('headline')}\n"
+        f"primary_text: {creative.get('primary_text')}\n"
+        f"description: {creative.get('description')}\n"
+        f"cta: {creative.get('cta')}\n"
+        f"link: {creative.get('link_url')}\n"
+        f"image: {image.get('path')}\n\n"
+        f"Push PAUSED ke Meta:\n/push_draft {draft.get('draft_id')}"
+    )
+
+
+def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
+    path = _resolve_draft_path(config, draft_ref)
+    draft = _load_json(path)
+    creative = _expect_dict(draft.get("creative"), "creative")
+    image = _expect_dict(draft.get("image"), "image")
+    image_path_value = image.get("path")
+    if not image_path_value:
+        raise ValueError("Draft belum punya image path.")
+
+    draft_id = str(draft.get("draft_id") or path.stem)
+    api = MetaAPI(config)
+    ad_account_id = config.ad_account_id
+    page_id = config.page_id
+    if not ad_account_id:
+        raise ValueError("META_AD_ACCOUNT_ID belum diisi.")
+    if not page_id:
+        raise ValueError("META_PAGE_ID belum diisi.")
+
+    uploaded = api.upload_image(Path(str(image_path_value)), ad_account_id)
+    creative_result = api.create_image_ad_creative(
+        ad_account_id=ad_account_id,
+        page_id=page_id,
+        name=str(creative["name"]),
+        image_hash=uploaded.image_hash,
+        link_url=str(creative["link_url"]),
+        message=str(creative["primary_text"]),
+        headline=str(creative["headline"]),
+        description=str(creative.get("description") or ""),
+        call_to_action_type=str(creative.get("cta") or "LEARN_MORE"),
+        url_tags=str(creative["url_tags"]) if creative.get("url_tags") else None,
+    )
+    creative_artifact = _save_creative_artifact(
+        config=config,
+        creative_id=creative_result.creative_id,
+        payload={
+            "draft_id": draft_id,
+            "creative": creative,
+            "image_hash": uploaded.image_hash,
+        },
+        raw_response=creative_result.raw_response,
+    )
+
+    safe_name = draft_id[:80]
+    paused_result, paused_artifact = create_paused_draft_ad_from_creative(
+        api,
+        config,
+        creative_id=creative_result.creative_id,
+        campaign_name=f"AI Draft - {safe_name}",
+        adset_name=f"AI Draft Ad Set - {safe_name}",
+        ad_name=f"AI Draft Ad - {safe_name}",
+        daily_budget=50000,
+        country="ID",
+    )
+
+    return (
+        "Draft pushed ke Meta sebagai PAUSED.\n"
+        f"draft_id: {draft_id}\n"
+        f"creative_id: {creative_result.creative_id}\n"
+        f"image_hash: {uploaded.image_hash}\n"
+        f"campaign_id: {paused_result.campaign_id}\n"
+        f"adset_id: {paused_result.adset_id}\n"
+        f"ad_id: {paused_result.ad_id}\n\n"
+        "Status: campaign/adset/ad PAUSED. Tidak ada publish ACTIVE.\n"
+        f"creative_artifact: {creative_artifact}\n"
+        f"paused_artifact: {paused_artifact}"
+    )
+
+
+def _latest_draft_paths(config: AppConfig, *, limit: int) -> list[Path]:
+    draft_dir = config.output_dir / "drafts"
+    if not draft_dir.exists():
+        return []
+    paths = [path for path in draft_dir.glob("*.json") if path.is_file()]
+    paths.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return paths[:limit]
+
+
+def _resolve_draft_path(config: AppConfig, draft_ref: str) -> Path:
+    if not draft_ref:
+        raise ValueError("Masukkan draft_id. Contoh: /preview draft_...")
+
+    candidate = Path(draft_ref)
+    if candidate.exists():
+        return candidate
+
+    draft_dir = config.output_dir / "drafts"
+    if not draft_ref.endswith(".json"):
+        draft_ref = f"{draft_ref}.json"
+    path = draft_dir / draft_ref
+    if not path.exists():
+        raise FileNotFoundError(f"Draft tidak ditemukan: {path}")
+    return path
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+    if not isinstance(data, dict):
+        raise ValueError(f"JSON harus object: {path}")
+    return data
+
+
+def _expect_dict(value: Any, field_name: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(f"Draft field bukan object: {field_name}")
+    return value
