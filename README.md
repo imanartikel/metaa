@@ -1,100 +1,77 @@
 # Meta Ad Drafter
 
-Aplikasi Python lokal untuk fondasi sistem AI-assisted Meta Ads Drafting.
+Local Python app untuk bikin draft Meta Ads dengan bantuan AI secara aman.
 
-Fase ini hanya membuat layer koneksi ke Meta Marketing API:
+Status project saat ini:
 
-- validasi credential/token
-- membaca daftar ad account
-- membaca daftar Page
-- upload image creative dan mengambil `image_hash`
-- menyimpan response API yang sudah disensor ke `output/logs/`
+- connect ke Meta Marketing API
+- validasi token dan identity
+- baca ad account dan Page
+- upload image creative
+- create Ad Creative object
+- create campaign, ad set, dan ad dalam status `PAUSED`
+- generate draft JSON + placeholder image lokal
+- trigger draft awal via Telegram bot lokal
 
-Belum ada fitur AI generation, landing page generation, optimization, atau pembuatan campaign/adset/ad.
+Belum ada auto publish. Belum ada iklan `ACTIVE`. Belum ada spend otomatis.
 
-## Prinsip Safety
+## Safety Rules
 
-Aplikasi ini tidak pernah membuat iklan dengan status `ACTIVE` dan tidak pernah menjalankan spending otomatis.
-
-Untuk pengembangan berikutnya, semua pembuatan campaign, ad set, dan ad wajib default ke:
-
-```text
-PAUSED
-```
-
-Di kode sudah ada helper `require_paused_status()` untuk menolak status `ACTIVE`.
-
-## Privacy Policy untuk Meta App
-
-Meta Developer biasanya meminta URL privacy policy public saat app dipublish. Template sudah tersedia di:
+Project ini wajib menjaga aturan berikut:
 
 ```text
-docs/privacy-policy.html
+campaign status = PAUSED
+ad set status  = PAUSED
+ad status      = PAUSED
 ```
 
-Upload file itu ke hosting public seperti GitHub Pages, Netlify, Vercel, Google Sites, atau hosting domain sendiri. Setelah public, masukkan URL-nya ke bagian Privacy Policy URL di Meta Developer.
+AI dan Telegram boleh membantu bikin draft, copy, image prompt, image asset, dan object iklan. Publish tetap manual dari Ads Manager.
 
-Sebelum dipakai, ganti email di bagian `Contact` dari:
+## Repo
 
 ```text
-your-email@example.com
+https://github.com/imanartikel/metaa
 ```
 
-menjadi email aktif milik kamu/bisnis.
+## Restore di Mesin Baru
 
-## Struktur Folder
+### macOS / Linux
 
-```text
-meta-ad-drafter/
-  .env
-  .env.example
-  requirements.txt
-  src/
-    main.py
-    config.py
-    meta_api.py
-    test_connection.py
-    upload_image.py
-  assets/
-  output/
-    logs/
-```
-
-Penjelasan singkat:
-
-- `.env`: credential lokal. Jangan commit file ini.
-- `.env.example`: contoh format environment variable.
-- `src/config.py`: loader konfigurasi dan logging.
-- `src/meta_api.py`: helper class untuk raw Meta Graph API.
-- `src/main.py`: entrypoint CLI.
-- `src/test_connection.py`: command untuk tes token, ad account, dan Page.
-- `src/upload_image.py`: command upload image ke `/act_<AD_ACCOUNT_ID>/adimages`.
-- `assets/`: tempat simpan file gambar lokal, misalnya `test.jpg`.
-- `output/logs/`: tempat menyimpan log dan response API.
-
-## Setup
-
-Masuk ke folder project:
-
-```powershell
-cd "c:\Users\62812\Desktop\fb ad\meta-ad-drafter"
-```
-
-Buat virtual environment Python 3.12:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-Install dependency:
-
-```powershell
+```bash
+git clone https://github.com/imanartikel/metaa.git
+cd metaa
+python3.12 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Isi file `.env`:
+Edit `.env`, isi credential asli.
+
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/imanartikel/metaa.git
+cd metaa
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+Edit `.env`, isi credential asli.
+
+Kalau PowerShell menolak activate script:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+## Environment Variables
+
+Isi `.env` lokal. Jangan commit file ini.
 
 ```text
 META_ACCESS_TOKEN=
@@ -103,6 +80,7 @@ META_PAGE_ID=
 META_APP_ID=
 META_APP_SECRET=
 META_GRAPH_API_VERSION=v25.0
+
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_ALLOWED_USER_IDS=
 TELEGRAM_VERIFY_SSL=true
@@ -110,101 +88,113 @@ TELEGRAM_VERIFY_SSL=true
 
 Catatan:
 
-- `META_ACCESS_TOKEN`: access token dari Meta.
-- `META_AD_ACCOUNT_ID`: isi angka saja boleh, contoh `1234567890`; kode akan otomatis memakai format `act_1234567890`.
-- `META_PAGE_ID`: Page ID untuk kebutuhan future creative/ad flow.
-- `META_APP_ID` dan `META_APP_SECRET`: dipakai untuk validasi token via `/debug_token`.
-- `META_GRAPH_API_VERSION`: versi Graph API eksplisit. Default saat ini diset ke `v25.0`.
+- `META_ACCESS_TOKEN`: token Meta yang punya `ads_management`.
+- `META_AD_ACCOUNT_ID`: boleh angka saja, contoh `927494890169245`.
+- `META_PAGE_ID`: Page ID yang muncul dari `python src/main.py test`.
+- `META_APP_ID` dan `META_APP_SECRET`: dipakai untuk `/debug_token`.
+- `TELEGRAM_ALLOWED_USER_IDS`: isi user id Telegram yang boleh pakai bot.
+- `TELEGRAM_VERIFY_SSL=false`: hanya untuk development kalau Python lokal gagal SSL ke Telegram.
 
-## Cara Menjalankan
+## Struktur Folder
 
-Tes koneksi:
+```text
+meta-ad-drafter/
+  .env.example
+  requirements.txt
+  README.md
+  docs/
+    privacy-policy.html
+  input/
+    brief.example.json
+  assets/
+    test.jpg
+  output/
+    logs/
+  src/
+    main.py
+    config.py
+    meta_api.py
+    draft_package.py
+    create_creative.py
+    create_paused_draft.py
+    telegram_bot.py
+    test_connection.py
+    upload_image.py
+```
 
-```powershell
+Runtime files seperti `.env`, logs, generated drafts, dan generated images di-ignore oleh Git.
+
+## Quick Health Check
+
+```bash
 python src/main.py test
-```
-
-Cek identitas user/system user dari token:
-
-```powershell
 python src/main.py whoami
-```
-
-Cek ad account yang ada di `.env` secara langsung:
-
-```powershell
 python src/main.py check-account
 ```
 
-Upload gambar:
+Expected:
 
-```powershell
-python src/main.py upload-image assets/test.jpg
-```
+- token valid
+- Page kebaca
+- ad account reachable
 
-Buat image ad creative dari `image_hash` yang sudah ada:
+## Flow Manual Aman
 
-```powershell
-python src/main.py create-creative `
-  --image-hash ac0a279661be2f49b99c8022bb6c69dd `
-  --name "WL 629 - Test Creative 001" `
-  --link-url "https://example.com" `
-  --message "Primary text iklan ditulis di sini." `
-  --headline "Headline iklan" `
-  --description "Deskripsi singkat opsional." `
-  --cta LEARN_MORE
-```
+### 1. Generate draft lokal
 
-Upload image lalu langsung buat creative:
-
-```powershell
-python src/main.py create-creative `
-  --image-path assets/test.jpg `
-  --name "WL 629 - Test Creative 002" `
-  --link-url "https://example.com" `
-  --message "Primary text iklan ditulis di sini." `
-  --headline "Headline iklan" `
-  --cta LEARN_MORE
-```
-
-Cek payload tanpa kirim write request ke Meta:
-
-```powershell
-python src/main.py create-creative `
-  --image-hash ac0a279661be2f49b99c8022bb6c69dd `
-  --name "Dry Run Creative" `
-  --link-url "https://example.com" `
-  --message "Primary text iklan ditulis di sini." `
-  --headline "Headline iklan" `
-  --dry-run
-```
-
-Buat draft package dari brief JSON dan placeholder image lokal:
-
-```powershell
+```bash
 python src/main.py draft-package --brief input/brief.example.json
 ```
 
-Hasilnya:
+Output:
 
 ```text
 output/drafts/draft_*.json
 assets/generated/draft_*.jpg
 ```
 
-Cek payload creative dari draft tanpa upload/create ke Meta:
+### 2. Review payload creative tanpa write ke Meta
 
-```powershell
-python src/main.py create-creative-from-draft output/drafts/draft_YYYYMMDDTHHMMSSZ_bengkel_mobil_wl.json --dry-run
+```bash
+python src/main.py create-creative-from-draft output/drafts/draft_xxx.json --dry-run
 ```
 
-Kalau draft sudah oke, upload image dan buat creative object:
+### 3. Upload image + create Ad Creative
 
-```powershell
-python src/main.py create-creative-from-draft output/drafts/draft_YYYYMMDDTHHMMSSZ_bengkel_mobil_wl.json
+```bash
+python src/main.py create-creative-from-draft output/drafts/draft_xxx.json
 ```
 
-Buat campaign, ad set, dan ad placeholder dalam status `PAUSED` dari creative ID:
+Output penting:
+
+```text
+creative_id: ...
+image_hash: ...
+```
+
+### 4. Create campaign/ad set/ad dalam status PAUSED
+
+```bash
+python src/main.py create-paused-draft-ad \
+  --creative-id 1496767121939472 \
+  --campaign-name "AI Draft - Placeholder Campaign" \
+  --adset-name "AI Draft - Placeholder Ad Set" \
+  --ad-name "AI Draft - Placeholder Ad" \
+  --daily-budget 50000 \
+  --country ID
+```
+
+Semua object dibuat `PAUSED`.
+
+Untuk dry run:
+
+```bash
+python src/main.py create-paused-draft-ad --creative-id 1496767121939472 --dry-run
+```
+
+## Windows PowerShell Line Continuation
+
+Di PowerShell, pakai backtick:
 
 ```powershell
 python src/main.py create-paused-draft-ad `
@@ -216,56 +206,50 @@ python src/main.py create-paused-draft-ad `
   --country ID
 ```
 
-Cek plan tanpa kirim write request:
+Di macOS/Linux, pakai backslash:
 
-```powershell
-python src/main.py create-paused-draft-ad `
-  --creative-id 1496767121939472 `
-  --dry-run
+```bash
+python src/main.py create-paused-draft-ad \
+  --creative-id 1496767121939472 \
+  --campaign-name "AI Draft - Placeholder Campaign" \
+  --adset-name "AI Draft - Placeholder Ad Set" \
+  --ad-name "AI Draft - Placeholder Ad" \
+  --daily-budget 50000 \
+  --country ID
 ```
 
 ## Telegram Bot Lokal
 
-Tambahkan token bot dan user id kamu ke `.env`:
+Telegram sekarang hanya bikin draft lokal. Bot belum auto upload ke Meta.
 
-```text
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_ALLOWED_USER_IDS=
-TELEGRAM_VERIFY_SSL=true
-```
+### Cek bot token
 
-Kalau Python lokal gagal SSL ke Telegram saat development, set sementara:
-
-```text
-TELEGRAM_VERIFY_SSL=false
-```
-
-Untuk production, pakai `true`.
-
-Untuk cari user id:
-
-1. Kirim `/start` ke bot Telegram.
-2. Jalankan:
-
-```powershell
-python src/main.py telegram-updates
-```
-
-Isi `TELEGRAM_ALLOWED_USER_IDS` dengan `user_id` yang muncul.
-
-Cek token bot:
-
-```powershell
+```bash
 python src/main.py telegram-whoami
 ```
 
-Jalankan bot lokal:
+### Cari user id
 
-```powershell
+1. Kirim `/start` ke bot.
+2. Jalankan:
+
+```bash
+python src/main.py telegram-updates
+```
+
+Isi `.env`:
+
+```text
+TELEGRAM_ALLOWED_USER_IDS=208131918
+```
+
+### Jalankan bot
+
+```bash
 python src/main.py telegram-bot
 ```
 
-Command Telegram awal:
+Command Telegram:
 
 ```text
 /id
@@ -278,116 +262,120 @@ Contoh:
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
 ```
 
-Bot akan membuat draft JSON dan placeholder image lokal. Push ke Meta tetap dilakukan manual dari terminal dengan command yang diberikan bot.
-
-Mode verbose kalau butuh debug log di terminal:
-
-```powershell
-python src/main.py --verbose test
-```
-
-## Contoh Output
-
-Contoh output `test`:
+Bot akan membuat:
 
 ```text
-Meta Ads Drafter connection test
---------------------------------
-
-Token
-  status: valid
-  app_id: 123456789
-  expires_at: 1760000000
-  scopes: 8 scope(s)
-
-Ad accounts
-  count: 1
-  1. Nama Ad Account | act_123456789 | 1
-
-Pages
-  count: 1
-  1. Nama Page | 123456789 | Business
-
-[OK] Connection test completed.
-API responses saved in: C:\...\meta-ad-drafter\output\logs
+input/telegram/*_brief.json
+output/drafts/draft_*.json
+assets/generated/draft_*.jpg
 ```
 
-Contoh output `upload-image`:
+## Meta App Privacy Policy
+
+Template tersedia:
 
 ```text
-Meta Ads Drafter image upload
------------------------------
-image: C:\...\meta-ad-drafter\assets\test.jpg
-ad_account: 123456789
-status: uploading
-
-[OK] Image uploaded.
-image_hash: abcdef1234567890abcdef1234567890
-response_log: C:\...\meta-ad-drafter\output\logs\20260514T...\_POST_200_act_123456789_adimages.json
+docs/privacy-policy.html
 ```
 
-Contoh output `create-creative`:
+Untuk Meta Developer, privacy policy harus public. Bisa pakai:
+
+- Google Docs public link
+- Google Sites
+- GitHub Pages
+- Netlify/Vercel
+- hosting sendiri
+
+## Important IDs dari Test Terakhir
+
+Contoh IDs yang pernah berhasil dibuat:
 
 ```text
-Meta Ads Drafter image creative
---------------------------------
-ad_account: 123456789
-page_id: 123456789
-name: WL 629 - Test Creative 001
-
-[OK] Image ad creative created.
-creative_id: 123456789012345
-image_hash: ac0a279661be2f49b99c8022bb6c69dd
-creative_response_log: C:\...\output\logs\20260514T...\_POST_200_act_123456789_adcreatives.json
-creative_artifact: C:\...\output\creative_123456789012345.json
+creative_id: 1496767121939472
+campaign_id: 120245030770110050
+adset_id: 120245030770880050
+ad_id: 120245030771690050
 ```
+
+Ini hanya referensi. Untuk draft baru, pakai ID terbaru dari output command.
 
 ## Troubleshooting
 
-`[CONFIG ERROR] Missing required environment variable: META_ACCESS_TOKEN`
+### Missing `META_ACCESS_TOKEN`
 
-Artinya `.env` belum diisi atau token masih kosong.
+Isi `.env`.
 
-`[META API ERROR] Error validating access token`
+### Token valid tapi upload image gagal
 
-Biasanya token expired, salah copy, atau permission kurang.
-
-Tidak ada ad account yang muncul:
-
-- pastikan user/system user punya akses ke ad account
-- pastikan token punya permission yang sesuai
-- jalankan `python src/main.py whoami` dan cocokkan nama token dengan user/system user yang diberi akses di Business Manager
-- cek Business Manager access
-
-Upload image gagal:
-
-- pastikan file benar-benar ada, misalnya `assets/test.jpg`
-- pastikan `META_AD_ACCOUNT_ID` benar
-- pastikan token punya akses ke ad account tersebut
-- pastikan user/system user punya role `Advertiser` atau lebih tinggi di ad account
-- pastikan token punya permission `ads_management`
-- cek file JSON terbaru di `output/logs/`
-
-Create creative gagal dengan pesan `Facebook Page is missing`:
-
-- pastikan `META_PAGE_ID` adalah Page yang benar-benar kebaca dari `python src/main.py test`
-- Page ID harus milik Page yang token/app bisa akses
-
-Create creative gagal dengan pesan `Ads creative post was created by an app that is in development mode`:
-
-- image upload sudah berhasil, tetapi app Meta masih dalam Development Mode
-- ubah app `ad drafter` ke Live/Public Mode di Meta Developer
-- pastikan permission iklan yang dipakai app sudah siap untuk mode live
-- setelah app live, jalankan ulang `python src/main.py create-creative-from-draft ...`
-
-Response API selalu disimpan di:
+Pastikan identity token punya:
 
 ```text
-output/logs/
+ads_management
+write access / Manage campaigns
+access ke ad account
 ```
 
-Token dan secret disensor otomatis di log dengan nilai:
+Cek identity token:
+
+```bash
+python src/main.py whoami
+```
+
+### `Facebook Page is missing`
+
+`META_PAGE_ID` salah atau token tidak punya akses ke Page itu.
+
+Jalankan:
+
+```bash
+python src/main.py test
+```
+
+Pakai Page ID yang muncul di output.
+
+### `app is in development mode`
+
+Meta App harus Live/Public untuk create ad creative.
+
+### Telegram tidak balas
+
+Pastikan bot polling jalan:
+
+```bash
+python src/main.py telegram-bot
+```
+
+Cek update:
+
+```bash
+python src/main.py telegram-updates
+```
+
+Cek log:
 
 ```text
-***REDACTED***
+output/logs/telegram-bot.err.log
+output/logs/telegram-bot.out.log
 ```
+
+### Python SSL error ke Telegram
+
+Untuk development lokal, set:
+
+```text
+TELEGRAM_VERIFY_SSL=false
+```
+
+Untuk production, sebaiknya balik ke:
+
+```text
+TELEGRAM_VERIFY_SSL=true
+```
+
+## Next Roadmap
+
+- Claude Haiku draft generator
+- Vertex/Gemini image provider
+- campaign config JSON
+- Telegram `/push_draft` yang tetap create semua object dalam status `PAUSED`
+- manual review summary sebelum publish
