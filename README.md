@@ -86,7 +86,7 @@ TELEGRAM_ALLOWED_USER_IDS=
 TELEGRAM_VERIFY_SSL=true
 
 ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-3-5-haiku-20241022
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
 ANTHROPIC_VERIFY_SSL=true
 ```
 
@@ -99,7 +99,7 @@ Catatan:
 - `TELEGRAM_ALLOWED_USER_IDS`: isi user id Telegram yang boleh pakai bot.
 - `TELEGRAM_VERIFY_SSL=false`: hanya untuk development kalau Python lokal gagal SSL ke Telegram.
 - `ANTHROPIC_API_KEY`: API key Claude. Kalau kosong, draft tetap jalan pakai placeholder.
-- `ANTHROPIC_MODEL`: default murah/cepat `claude-3-5-haiku-20241022`.
+- `ANTHROPIC_MODEL`: default murah/cepat `claude-haiku-4-5-20251001`.
 - `ANTHROPIC_VERIFY_SSL=false`: hanya untuk development kalau Python lokal gagal SSL ke Anthropic.
 
 ## Struktur Folder

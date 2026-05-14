@@ -82,7 +82,7 @@ def load_config(env_path: str | Path | None = None) -> AppConfig:
         telegram_allowed_user_ids=_parse_int_set(_env_value("TELEGRAM_ALLOWED_USER_IDS")),
         telegram_verify_ssl=_parse_bool(_env_value("TELEGRAM_VERIFY_SSL"), default=True),
         anthropic_api_key=_env_value("ANTHROPIC_API_KEY"),
-        anthropic_model=_env_value("ANTHROPIC_MODEL") or "claude-3-5-haiku-20241022",
+        anthropic_model=_env_value("ANTHROPIC_MODEL") or "claude-haiku-4-5-20251001",
         anthropic_verify_ssl=_parse_bool(_env_value("ANTHROPIC_VERIFY_SSL"), default=True),
     )
 
