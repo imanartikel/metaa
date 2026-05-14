@@ -9,7 +9,7 @@ from typing import Any
 import requests
 
 from config import AppConfig, require_telegram_bot_token
-from draft_package import build_placeholder_draft, generate_placeholder_image
+from draft_package import build_draft, generate_placeholder_image
 
 
 logger = logging.getLogger(__name__)
@@ -237,7 +237,7 @@ def _create_draft_from_telegram_brief(
     config: AppConfig,
     brief: dict[str, Any],
 ) -> tuple[Path, Path]:
-    draft = build_placeholder_draft(brief)
+    draft = build_draft(brief, config=config, use_ai=True)
     draft_dir = config.output_dir / "drafts"
     image_dir = config.project_root / "assets" / "generated"
     brief_dir = config.project_root / "input" / "telegram"

@@ -15,12 +15,13 @@ def run_draft_package(
     *,
     brief_path: Path,
     no_image: bool,
+    use_ai: bool,
 ) -> int:
     resolved_brief_path = (
         brief_path if brief_path.is_absolute() else config.project_root / brief_path
     )
     brief = _load_brief(resolved_brief_path)
-    draft = build_placeholder_draft(brief)
+    draft = build_draft(brief, config=config, use_ai=use_ai)
 
     draft_dir = config.output_dir / "drafts"
     image_dir = config.project_root / "assets" / "generated"
@@ -130,23 +131,18 @@ def build_placeholder_draft(brief: dict[str, Any]) -> dict[str, Any]:
         "Style: professional, trustworthy, direct-response ad, readable text area."
     )
 
-    draft_id = f"draft_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{_slug(product_name)}"
-
-    return {
-        "draft_id": draft_id,
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "source": {
-            "type": "placeholder_generator",
-            "ai_model": None,
-            "notes": "Claude/Vertex belum dipanggil. Ini draft rule-based untuk validasi pipeline.",
-        },
-        "brief": brief,
-        "strategy": {
+    draft = make_draft_shell(
+        brief=brief,
+        source_type="placeholder_generator",
+        ai_model=None,
+        notes="Claude/Vertex belum dipanggil. Ini draft rule-based untuk validasi pipeline.",
+    )
+    draft["strategy"] = {
             "angle": f"Lead with clear offer for {audience}",
             "customer_pain": pain_points,
             "benefits": benefits,
-        },
-        "creative": {
+        }
+    draft["creative"] = {
             "name": f"{product_name} - Placeholder Creative",
             "primary_text": primary_text,
             "headline": headline,
@@ -155,7 +151,55 @@ def build_placeholder_draft(brief: dict[str, Any]) -> dict[str, Any]:
             "link_url": landing_url,
             "url_tags": "utm_source=meta&utm_medium=paid_social&utm_campaign=ai_draft",
             "image_prompt": image_prompt,
+    }
+    return draft
+
+
+def build_draft(
+    brief: dict[str, Any],
+    *,
+    config: AppConfig,
+    use_ai: bool,
+) -> dict[str, Any]:
+    if use_ai:
+        try:
+            from anthropic_client import build_ai_draft_if_available
+
+            ai_draft = build_ai_draft_if_available(config, brief)
+            if ai_draft:
+                return ai_draft
+        except Exception as exc:
+            fallback = build_placeholder_draft(brief)
+            fallback["source"]["ai_error"] = str(exc)
+            fallback["source"]["notes"] = (
+                "AI draft generation failed. Fallback placeholder draft was used."
+            )
+            return fallback
+
+    return build_placeholder_draft(brief)
+
+
+def make_draft_shell(
+    *,
+    brief: dict[str, Any],
+    source_type: str,
+    ai_model: str | None,
+    notes: str,
+) -> dict[str, Any]:
+    product_name = str(brief.get("product_name") or "Produk")
+    draft_id = f"draft_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{_slug(product_name)}"
+
+    return {
+        "draft_id": draft_id,
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "source": {
+            "type": source_type,
+            "ai_model": ai_model,
+            "notes": notes,
         },
+        "brief": brief,
+        "strategy": {},
+        "creative": {},
         "safety": {
             "status": "DRAFT_ONLY",
             "creates_campaign": False,

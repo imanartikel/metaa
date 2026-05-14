@@ -27,6 +27,9 @@ class AppConfig:
     telegram_bot_token: str | None
     telegram_allowed_user_ids: set[int]
     telegram_verify_ssl: bool
+    anthropic_api_key: str | None
+    anthropic_model: str
+    anthropic_verify_ssl: bool
     request_timeout_seconds: int = 30
     max_retries: int = 3
     retry_backoff_seconds: float = 1.0
@@ -78,6 +81,9 @@ def load_config(env_path: str | Path | None = None) -> AppConfig:
         telegram_bot_token=_env_value("TELEGRAM_BOT_TOKEN"),
         telegram_allowed_user_ids=_parse_int_set(_env_value("TELEGRAM_ALLOWED_USER_IDS")),
         telegram_verify_ssl=_parse_bool(_env_value("TELEGRAM_VERIFY_SSL"), default=True),
+        anthropic_api_key=_env_value("ANTHROPIC_API_KEY"),
+        anthropic_model=_env_value("ANTHROPIC_MODEL") or "claude-3-5-haiku-20241022",
+        anthropic_verify_ssl=_parse_bool(_env_value("ANTHROPIC_VERIFY_SSL"), default=True),
     )
 
 

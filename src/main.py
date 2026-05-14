@@ -101,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Generate draft JSON only.",
     )
+    draft_parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Force placeholder rule-based draft even if Anthropic API key is configured.",
+    )
 
     draft_creative_parser = subparsers.add_parser(
         "create-creative-from-draft",
@@ -212,6 +217,7 @@ def main(argv: list[str] | None = None) -> int:
                 config,
                 brief_path=Path(args.brief),
                 no_image=args.no_image,
+                use_ai=not args.no_ai,
             )
 
         if args.command == "create-creative-from-draft":

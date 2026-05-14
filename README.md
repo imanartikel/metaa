@@ -84,6 +84,10 @@ META_GRAPH_API_VERSION=v25.0
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_ALLOWED_USER_IDS=
 TELEGRAM_VERIFY_SSL=true
+
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-3-5-haiku-20241022
+ANTHROPIC_VERIFY_SSL=true
 ```
 
 Catatan:
@@ -94,6 +98,9 @@ Catatan:
 - `META_APP_ID` dan `META_APP_SECRET`: dipakai untuk `/debug_token`.
 - `TELEGRAM_ALLOWED_USER_IDS`: isi user id Telegram yang boleh pakai bot.
 - `TELEGRAM_VERIFY_SSL=false`: hanya untuk development kalau Python lokal gagal SSL ke Telegram.
+- `ANTHROPIC_API_KEY`: API key Claude. Kalau kosong, draft tetap jalan pakai placeholder.
+- `ANTHROPIC_MODEL`: default murah/cepat `claude-3-5-haiku-20241022`.
+- `ANTHROPIC_VERIFY_SSL=false`: hanya untuk development kalau Python lokal gagal SSL ke Anthropic.
 
 ## Struktur Folder
 
@@ -144,6 +151,12 @@ Expected:
 
 ```bash
 python src/main.py draft-package --brief input/brief.example.json
+```
+
+Kalau `ANTHROPIC_API_KEY` terisi, command ini otomatis pakai Claude Haiku untuk copywriting. Untuk paksa placeholder:
+
+```bash
+python src/main.py draft-package --brief input/brief.example.json --no-ai
 ```
 
 Output:
@@ -270,6 +283,8 @@ output/drafts/draft_*.json
 assets/generated/draft_*.jpg
 ```
 
+Kalau `ANTHROPIC_API_KEY` ada di `.env`, Telegram `/draft` akan pakai Claude Haiku untuk copy dan creative direction. Kalau key kosong atau API error, bot fallback ke placeholder.
+
 ## Meta App Privacy Policy
 
 Template tersedia:
@@ -374,7 +389,6 @@ TELEGRAM_VERIFY_SSL=true
 
 ## Next Roadmap
 
-- Claude Haiku draft generator
 - Vertex/Gemini image provider
 - campaign config JSON
 - Telegram `/push_draft` yang tetap create semua object dalam status `PAUSED`
