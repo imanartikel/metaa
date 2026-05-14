@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy - Meta Ad Drafter</title>
+    <style>
+      body {
+        color: #1f2937;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        background: #f8fafc;
+      }
+
+      main {
+        background: #ffffff;
+        margin: 32px auto;
+        max-width: 860px;
+        padding: 32px;
+      }
+
+      h1,
+      h2 {
+        color: #111827;
+        line-height: 1.25;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      code {
+        background: #eef2f7;
+        padding: 2px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p><strong>Last updated:</strong> May 14, 2026</p>
+
+      <p>
+        Meta Ad Drafter is a private/local tool used to help draft and manage
+        Meta advertising assets through the Meta Marketing API. This tool is
+        designed for internal use and does not sell personal information.
+      </p>
+
+      <h2>Information We Access</h2>
+      <p>
+        When connected to Meta, the tool may access information required to
+        operate advertising workflows, including Meta ad account identifiers,
+        Page identifiers, Page names, ad account names, uploaded image creative
+        metadata, and API response metadata.
+      </p>
+
+      <h2>How We Use Information</h2>
+      <p>Information is used only to:</p>
+      <ul>
+        <li>validate Meta API credentials;</li>
+        <li>read accessible ad accounts and Pages;</li>
+        <li>upload image creatives;</li>
+        <li>create draft ad creative objects for manual review;</li>
+        <li>store local logs for debugging and audit purposes.</li>
+      </ul>
+
+      <h2>Advertising Safety</h2>
+      <p>
+        The tool does not automatically publish active ads or spend advertising
+        budget. Any future campaign, ad set, or ad creation workflow is intended
+        to default to <code>PAUSED</code> and require manual review before
+        publishing.
+      </p>
+
+      <h2>Data Storage</h2>
+      <p>
+        API responses and draft artifacts may be stored locally on the device
+        running the tool. Access tokens and app secrets are stored in local
+        environment variables and are redacted from generated logs.
+      </p>
+
+      <h2>Data Sharing</h2>
+      <p>
+        We do not sell, rent, or share data with third parties for their own
+        marketing purposes. Data may be sent to Meta only as necessary to use
+        the Meta Marketing API. If AI generation providers are added in the
+        future, only the minimum creative brief information necessary to generate
+        draft copy or image prompts should be sent to those providers.
+      </p>
+
+      <h2>Data Deletion</h2>
+      <p>
+        Users may delete locally stored logs, draft files, and generated assets
+        from the local project folder at any time. To revoke Meta access, remove
+        the access token from the local environment file and revoke the app or
+        token from Meta account settings.
+      </p>
+
+      <h2>Security</h2>
+      <p>
+        Reasonable local security practices are used, including environment
+        variables for credentials and redaction of sensitive values in logs.
+        Users are responsible for keeping their local machine, access tokens,
+        and cloud credentials secure.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        For privacy questions, contact:
+        <a href="mailto:your-email@example.com">your-email@example.com</a>
+      </p>
+    </main>
+  </body>
+</html>

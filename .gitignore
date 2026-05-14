@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Keep local credentials private.
+.env
+
+# Runtime output can contain API metadata; keep the folder but not generated logs.
+output/logs/*.json
+output/logs/*.log
+output/drafts/*.json
+output/creative_*.json
+!output/logs/.gitkeep
+
+# Generated ad assets are local runtime artifacts.
+assets/generated/
