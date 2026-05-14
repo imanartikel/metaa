@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from config import AppConfig, require_ad_account_id
-from meta_api import MetaAPI
+from meta_api import DEFAULT_JAVA_BALI_REGION_KEYS, MetaAPI
 
 
 def run_create_paused_draft(
@@ -20,11 +20,15 @@ def run_create_paused_draft(
     country: str,
     age_min: int,
     age_max: int,
+    gender: str,
     dry_run: bool,
 ) -> int:
     ad_account_id = require_ad_account_id(config)
     if daily_budget <= 0:
         raise ValueError("daily_budget must be greater than 0.")
+    if age_min < 13 or age_max > 65 or age_min > age_max:
+        raise ValueError("age must be between 13-65 and age_min <= age_max.")
+    gender_values = gender_to_meta_values(gender)
 
     print("Meta Ads Drafter PAUSED draft ad")
     print("--------------------------------")
@@ -36,6 +40,8 @@ def run_create_paused_draft(
     print(f"daily_budget: {daily_budget}")
     print(f"country: {country.upper()}")
     print(f"age: {age_min}-{age_max}")
+    print(f"gender: {gender}")
+    print("regions: Java + Bali default")
     print("status: PAUSED for campaign, ad set, and ad")
 
     plan = {
@@ -54,7 +60,10 @@ def run_create_paused_draft(
             "bid_strategy": "LOWEST_COST_WITHOUT_CAP",
             "destination_type": "WEBSITE",
             "targeting": {
-                "geo_locations": {"countries": [country.upper()]},
+                "geo_locations": {
+                    "regions": [{"key": key} for key in DEFAULT_JAVA_BALI_REGION_KEYS],
+                    "location_types": ["home"],
+                },
                 "age_min": age_min,
                 "age_max": age_max,
                 "targeting_automation": {"advantage_audience": 0},
@@ -72,6 +81,8 @@ def run_create_paused_draft(
             "requires_manual_review": True,
         },
     }
+    if gender_values:
+        plan["adset"]["targeting"]["genders"] = gender_values  # type: ignore[index]
 
     if dry_run:
         print()
@@ -90,6 +101,8 @@ def run_create_paused_draft(
         country=country,
         age_min=age_min,
         age_max=age_max,
+        gender=gender,
+        region_keys=list(DEFAULT_JAVA_BALI_REGION_KEYS),
         plan=plan,
     )
 
@@ -117,11 +130,14 @@ def create_paused_draft_ad_from_creative(
     ad_name: str,
     daily_budget: int,
     country: str,
-    age_min: int = 18,
+    age_min: int = 25,
     age_max: int = 65,
+    gender: str = "all",
+    region_keys: list[str] | None = None,
     plan: dict[str, object] | None = None,
 ):
     ad_account_id = require_ad_account_id(config)
+    genders = gender_to_meta_values(gender)
     result = api.create_paused_draft_ad(
         ad_account_id=ad_account_id,
         creative_id=creative_id,
@@ -130,8 +146,10 @@ def create_paused_draft_ad_from_creative(
         ad_name=ad_name,
         daily_budget=daily_budget,
         country=country,
+        region_keys=region_keys,
         age_min=age_min,
         age_max=age_max,
+        genders=genders,
     )
 
     if plan is None:
@@ -145,8 +163,10 @@ def create_paused_draft_ad_from_creative(
                 "name": adset_name,
                 "daily_budget": daily_budget,
                 "country": country.upper(),
+                "region_keys": region_keys or [],
                 "age_min": age_min,
                 "age_max": age_max,
+                "gender": gender,
                 "status": "PAUSED",
             },
             "ad": {
@@ -166,6 +186,17 @@ def create_paused_draft_ad_from_creative(
         response_log_paths=result.response_log_paths,
     )
     return result, artifact_path
+
+
+def gender_to_meta_values(gender: str) -> list[int] | None:
+    normalized = gender.strip().lower()
+    if normalized in {"all", "semua", "any", "bebas", ""}:
+        return None
+    if normalized in {"male", "pria", "cowok", "laki", "laki-laki", "men"}:
+        return [1]
+    if normalized in {"female", "wanita", "cewek", "perempuan", "women"}:
+        return [2]
+    raise ValueError("gender harus salah satu: all, pria, wanita.")
 
 
 def _save_paused_draft_artifact(

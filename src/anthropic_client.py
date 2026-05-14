@@ -104,6 +104,9 @@ def _system_prompt() -> str:
         "You are a senior Meta ads strategist and direct-response copywriter. "
         "Create safe draft ad copy for manual review. Never suggest publishing active ads. "
         "Avoid exaggerated guarantees, medical/legal/financial claims, and discriminatory targeting. "
+        "Write Indonesian ad copy that feels natural, clear, and human. "
+        "Avoid stiff corporate Indonesian, buzzwords, hype, and overly formal phrases. "
+        "Sound like a helpful local business, not a press release. "
         "Return only valid JSON. No markdown."
     )
 
@@ -119,7 +122,9 @@ def _user_prompt(brief: dict[str, Any]) -> str:
         "strategy must include: angle, customer_pain, benefits, targeting_notes.\n"
         "safety must include: status, creates_campaign, creates_adset, creates_ad, "
         "publishes_active_ads, requires_manual_review.\n\n"
-        "Use Indonesian language for ad copy. Keep headline short. CTA must be one of "
+        "Use Indonesian language for ad copy. Keep it simple, specific, and conversational. "
+        "Avoid generic phrases like solusi terbaik, terpercaya, berkualitas, profesional unless the brief proves it. "
+        "Keep headline short. CTA must be one of "
         "LEARN_MORE, SIGN_UP, SHOP_NOW, CONTACT_US, BOOK_NOW, GET_QUOTE. "
         "Set safety.status to DRAFT_ONLY and all creation/publish booleans to false "
         "except requires_manual_review true."

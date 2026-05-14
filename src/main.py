@@ -147,19 +147,24 @@ def build_parser() -> argparse.ArgumentParser:
     paused_draft_parser.add_argument(
         "--country",
         default="ID",
-        help="Two-letter country code for placeholder targeting. Default: ID.",
+        help="Fallback country code if region preset is not used. Default: ID.",
     )
     paused_draft_parser.add_argument(
         "--age-min",
         type=int,
-        default=18,
-        help="Minimum age. Default: 18.",
+        default=25,
+        help="Minimum age. Default: 25.",
     )
     paused_draft_parser.add_argument(
         "--age-max",
         type=int,
         default=65,
         help="Maximum age. Default: 65.",
+    )
+    paused_draft_parser.add_argument(
+        "--gender",
+        default="all",
+        help="Gender targeting: all, pria, wanita. Default: all.",
     )
     paused_draft_parser.add_argument(
         "--dry-run",
@@ -251,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
                 country=args.country,
                 age_min=args.age_min,
                 age_max=args.age_max,
+                gender=args.gender,
                 dry_run=args.dry_run,
             )
 

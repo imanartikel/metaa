@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 GRAPH_BASE_URL = "https://graph.facebook.com/"
 DEFAULT_CREATION_STATUS = "PAUSED"
+DEFAULT_JAVA_BALI_REGION_KEYS = ("1664", "4143", "1685", "1666", "1669", "1667", "1662")
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 SENSITIVE_KEYS = {
     "access_token",
@@ -270,20 +271,33 @@ class MetaAPI:
         name: str,
         daily_budget: int,
         country: str = "ID",
+        region_keys: list[str] | None = None,
         age_min: int = 18,
         age_max: int = 65,
+        genders: list[int] | None = None,
         optimization_goal: str = "LINK_CLICKS",
         billing_event: str = "IMPRESSIONS",
         bid_strategy: str = "LOWEST_COST_WITHOUT_CAP",
     ) -> tuple[str, dict[str, Any], Path | None]:
         account_path = self._ad_account_path(ad_account_id)
         status = require_paused_status()
+        geo_locations: dict[str, Any]
+        if region_keys:
+            geo_locations = {
+                "regions": [{"key": str(key)} for key in region_keys],
+                "location_types": ["home"],
+            }
+        else:
+            geo_locations = {"countries": [country.upper()]}
+
         targeting = {
-            "geo_locations": {"countries": [country.upper()]},
+            "geo_locations": geo_locations,
             "age_min": age_min,
             "age_max": age_max,
             "targeting_automation": {"advantage_audience": 0},
         }
+        if genders:
+            targeting["genders"] = genders
 
         logger.info("Creating PAUSED ad set name=%s campaign=%s", name, campaign_id)
         response = self._request(
@@ -342,8 +356,10 @@ class MetaAPI:
         ad_name: str,
         daily_budget: int,
         country: str = "ID",
+        region_keys: list[str] | None = None,
         age_min: int = 18,
         age_max: int = 65,
+        genders: list[int] | None = None,
     ) -> PausedDraftAd:
         campaign_id, campaign_response, campaign_log = self.create_paused_campaign(
             ad_account_id=ad_account_id,
@@ -355,8 +371,10 @@ class MetaAPI:
             name=adset_name,
             daily_budget=daily_budget,
             country=country,
+            region_keys=region_keys,
             age_min=age_min,
             age_max=age_max,
+            genders=genders,
         )
         ad_id, ad_response, ad_log = self.create_paused_ad(
             ad_account_id=ad_account_id,

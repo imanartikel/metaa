@@ -219,13 +219,13 @@ def _help_text(user_id: int) -> str:
         "Commands:\n"
         "/id - tampilkan user id\n"
         "/draft product | offer | audience | landing_url\n"
-        "/draft product | offer | audience | landing_url | budget | country | age\n"
+        "/draft product | offer | audience | landing_url | budget | gender\n"
         "/list_drafts - lihat 5 draft terbaru\n"
         "/preview draft_id - lihat copy draft\n"
         "/push_draft draft_id - upload + create creative + create PAUSED ad\n\n"
         "Contoh:\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com\n"
-        "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | ID | 25-55\n"
+        "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all\n"
         "/preview draft_20260514T231222Z_bengkel_mobil_wl\n"
         "/push_draft draft_20260514T231222Z_bengkel_mobil_wl"
     )
@@ -234,21 +234,33 @@ def _help_text(user_id: int) -> str:
 def _parse_draft_command(text: str) -> dict[str, Any]:
     body = text.removeprefix("/draft").strip()
     parts = [part.strip() for part in body.split("|")]
-    if len(parts) not in {4, 7} or not all(parts):
+    if len(parts) not in {4, 6, 7} or not all(parts):
         raise ValueError(
-            "Format /draft salah. Pakai: /draft product | offer | audience | landing_url | budget | country | age"
+            "Format /draft salah. Pakai: /draft product | offer | audience | landing_url | budget | gender"
         )
 
     ad_settings = {
         "daily_budget": 50000,
         "country": "ID",
-        "age_min": 18,
+        "geo_preset": "JAVA_BALI",
+        "region_keys": ["1664", "4143", "1685", "1666", "1669", "1667", "1662"],
+        "age_min": 25,
         "age_max": 65,
+        "gender": "all",
         "objective": "OUTCOME_TRAFFIC",
         "optimization_goal": "LINK_CLICKS",
     }
 
-    if len(parts) == 7:
+    if len(parts) == 6:
+        product_name, offer, audience, landing_url, budget, gender = parts
+        ad_settings.update(
+            {
+                "daily_budget": _parse_positive_int(budget, "budget"),
+                "gender": _normalize_gender(gender),
+            }
+        )
+    elif len(parts) == 7:
+        # Legacy support for previous format: budget | country | age.
         product_name, offer, audience, landing_url, budget, country, age_range = parts
         age_min, age_max = _parse_age_range(age_range)
         ad_settings.update(
@@ -257,6 +269,7 @@ def _parse_draft_command(text: str) -> dict[str, Any]:
                 "country": country.upper(),
                 "age_min": age_min,
                 "age_max": age_max,
+                "gender": "all",
             }
         )
     else:
@@ -363,7 +376,7 @@ def _preview_draft(config: AppConfig, draft_ref: str) -> str:
         f"cta: {creative.get('cta')}\n"
         f"link: {creative.get('link_url')}\n"
         f"budget: {ad_settings.get('daily_budget', 50000)}\n"
-        f"target: {ad_settings.get('country', 'ID')} age {ad_settings.get('age_min', 18)}-{ad_settings.get('age_max', 65)}\n"
+        f"target: {ad_settings.get('geo_preset', 'JAVA_BALI')} age {ad_settings.get('age_min', 25)}-{ad_settings.get('age_max', 65)} gender {ad_settings.get('gender', 'all')}\n"
         f"image: {image.get('path')}\n\n"
         f"Push PAUSED ke Meta:\n/push_draft {draft.get('draft_id')}"
     )
@@ -414,8 +427,10 @@ def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
     ad_settings = _expect_dict(draft.get("brief", {}).get("ad_settings", {}), "brief.ad_settings")
     daily_budget = int(ad_settings.get("daily_budget") or 50000)
     country = str(ad_settings.get("country") or "ID")
-    age_min = int(ad_settings.get("age_min") or 18)
+    region_keys = [str(key) for key in ad_settings.get("region_keys", [])]
+    age_min = int(ad_settings.get("age_min") or 25)
     age_max = int(ad_settings.get("age_max") or 65)
+    gender = str(ad_settings.get("gender") or "all")
 
     safe_name = draft_id[:80]
     paused_result, paused_artifact = create_paused_draft_ad_from_creative(
@@ -427,8 +442,10 @@ def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
         ad_name=f"AI Draft Ad - {safe_name}",
         daily_budget=daily_budget,
         country=country,
+        region_keys=region_keys,
         age_min=age_min,
         age_max=age_max,
+        gender=gender,
     )
 
     return (
@@ -440,7 +457,7 @@ def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
         f"adset_id: {paused_result.adset_id}\n"
         f"ad_id: {paused_result.ad_id}\n\n"
         f"budget: {daily_budget}\n"
-        f"target: {country.upper()} age {age_min}-{age_max}\n"
+        f"target: {ad_settings.get('geo_preset', 'JAVA_BALI')} age {age_min}-{age_max} gender {gender}\n"
         "Status: campaign/adset/ad PAUSED. Tidak ada publish ACTIVE.\n"
         f"creative_artifact: {creative_artifact}\n"
         f"paused_artifact: {paused_artifact}"
@@ -510,3 +527,14 @@ def _parse_age_range(value: str) -> tuple[int, int]:
     if age_min > age_max:
         raise ValueError("age_min tidak boleh lebih besar dari age_max.")
     return age_min, age_max
+
+
+def _normalize_gender(value: str) -> str:
+    normalized = value.strip().lower()
+    if normalized in {"all", "semua", "any", "bebas"}:
+        return "all"
+    if normalized in {"male", "pria", "cowok", "laki", "laki-laki", "men"}:
+        return "pria"
+    if normalized in {"female", "wanita", "cewek", "perempuan", "women"}:
+        return "wanita"
+    raise ValueError("gender harus salah satu: all, pria, wanita.")

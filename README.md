@@ -267,7 +267,7 @@ Command Telegram:
 ```text
 /id
 /draft product | offer | audience | landing_url
-/draft product | offer | audience | landing_url | budget | country | age
+/draft product | offer | audience | landing_url | budget | gender
 /list_drafts
 /preview draft_id
 /push_draft draft_id
@@ -277,7 +277,7 @@ Contoh:
 
 ```text
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
-/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | ID | 25-55
+/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all
 /list_drafts
 /preview draft_20260514T231222Z_bengkel_mobil_wl
 /push_draft draft_20260514T231222Z_bengkel_mobil_wl
@@ -294,6 +294,22 @@ assets/generated/draft_*.jpg
 Kalau `ANTHROPIC_API_KEY` ada di `.env`, Telegram `/draft` akan pakai Claude Haiku untuk copy dan creative direction. Kalau key kosong atau API error, bot fallback ke placeholder.
 
 `/push_draft` akan upload image, create creative, lalu create campaign/ad set/ad dalam status `PAUSED`. Command ini tidak pernah publish `ACTIVE`.
+
+Default targeting Telegram:
+
+```text
+region: Jawa + Bali
+age: 25-65
+gender: all
+```
+
+Gender bisa diisi:
+
+```text
+all
+pria
+wanita
+```
 
 ## Meta App Privacy Policy
 
