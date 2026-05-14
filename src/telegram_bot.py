@@ -138,12 +138,15 @@ def run_telegram_bot(config: AppConfig) -> int:
 
     offset: int | None = None
     while True:
-        updates = client.get_updates(offset=offset, timeout=25)
-        for update in updates:
-            update_id = update.get("update_id")
-            if isinstance(update_id, int):
-                offset = update_id + 1
-            _handle_update(client, config, update)
+        try:
+            updates = client.get_updates(offset=offset, timeout=20)
+            for update in updates:
+                update_id = update.get("update_id")
+                if isinstance(update_id, int):
+                    offset = update_id + 1
+                _handle_update(client, config, update)
+        except TelegramAPIError as exc:
+            logger.warning("Telegram polling error: %s", exc)
         time.sleep(0.5)
 
 
