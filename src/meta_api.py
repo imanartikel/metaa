@@ -342,6 +342,8 @@ class MetaAPI:
         ad_name: str,
         daily_budget: int,
         country: str = "ID",
+        age_min: int = 18,
+        age_max: int = 65,
     ) -> PausedDraftAd:
         campaign_id, campaign_response, campaign_log = self.create_paused_campaign(
             ad_account_id=ad_account_id,
@@ -353,6 +355,8 @@ class MetaAPI:
             name=adset_name,
             daily_budget=daily_budget,
             country=country,
+            age_min=age_min,
+            age_max=age_max,
         )
         ad_id, ad_response, ad_log = self.create_paused_ad(
             ad_account_id=ad_account_id,

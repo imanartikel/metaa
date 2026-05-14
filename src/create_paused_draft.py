@@ -18,6 +18,8 @@ def run_create_paused_draft(
     ad_name: str,
     daily_budget: int,
     country: str,
+    age_min: int,
+    age_max: int,
     dry_run: bool,
 ) -> int:
     ad_account_id = require_ad_account_id(config)
@@ -33,6 +35,7 @@ def run_create_paused_draft(
     print(f"ad_name: {ad_name}")
     print(f"daily_budget: {daily_budget}")
     print(f"country: {country.upper()}")
+    print(f"age: {age_min}-{age_max}")
     print("status: PAUSED for campaign, ad set, and ad")
 
     plan = {
@@ -52,8 +55,8 @@ def run_create_paused_draft(
             "destination_type": "WEBSITE",
             "targeting": {
                 "geo_locations": {"countries": [country.upper()]},
-                "age_min": 18,
-                "age_max": 65,
+                "age_min": age_min,
+                "age_max": age_max,
                 "targeting_automation": {"advantage_audience": 0},
             },
             "status": "PAUSED",
@@ -85,6 +88,8 @@ def run_create_paused_draft(
         ad_name=ad_name,
         daily_budget=daily_budget,
         country=country,
+        age_min=age_min,
+        age_max=age_max,
         plan=plan,
     )
 
@@ -112,6 +117,8 @@ def create_paused_draft_ad_from_creative(
     ad_name: str,
     daily_budget: int,
     country: str,
+    age_min: int = 18,
+    age_max: int = 65,
     plan: dict[str, object] | None = None,
 ):
     ad_account_id = require_ad_account_id(config)
@@ -123,6 +130,8 @@ def create_paused_draft_ad_from_creative(
         ad_name=ad_name,
         daily_budget=daily_budget,
         country=country,
+        age_min=age_min,
+        age_max=age_max,
     )
 
     if plan is None:
@@ -136,6 +145,8 @@ def create_paused_draft_ad_from_creative(
                 "name": adset_name,
                 "daily_budget": daily_budget,
                 "country": country.upper(),
+                "age_min": age_min,
+                "age_max": age_max,
                 "status": "PAUSED",
             },
             "ad": {

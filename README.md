@@ -267,6 +267,7 @@ Command Telegram:
 ```text
 /id
 /draft product | offer | audience | landing_url
+/draft product | offer | audience | landing_url | budget | country | age
 /list_drafts
 /preview draft_id
 /push_draft draft_id
@@ -276,6 +277,7 @@ Contoh:
 
 ```text
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
+/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | ID | 25-55
 /list_drafts
 /preview draft_20260514T231222Z_bengkel_mobil_wl
 /push_draft draft_20260514T231222Z_bengkel_mobil_wl

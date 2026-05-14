@@ -150,6 +150,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Two-letter country code for placeholder targeting. Default: ID.",
     )
     paused_draft_parser.add_argument(
+        "--age-min",
+        type=int,
+        default=18,
+        help="Minimum age. Default: 18.",
+    )
+    paused_draft_parser.add_argument(
+        "--age-max",
+        type=int,
+        default=65,
+        help="Maximum age. Default: 65.",
+    )
+    paused_draft_parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print planned payload only. Does not create anything.",
@@ -237,6 +249,8 @@ def main(argv: list[str] | None = None) -> int:
                 ad_name=args.ad_name,
                 daily_budget=args.daily_budget,
                 country=args.country,
+                age_min=args.age_min,
+                age_max=args.age_max,
                 dry_run=args.dry_run,
             )
 
