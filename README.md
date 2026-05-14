@@ -103,6 +103,9 @@ META_PAGE_ID=
 META_APP_ID=
 META_APP_SECRET=
 META_GRAPH_API_VERSION=v25.0
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ALLOWED_USER_IDS=
+TELEGRAM_VERIFY_SSL=true
 ```
 
 Catatan:
@@ -200,6 +203,82 @@ Kalau draft sudah oke, upload image dan buat creative object:
 ```powershell
 python src/main.py create-creative-from-draft output/drafts/draft_YYYYMMDDTHHMMSSZ_bengkel_mobil_wl.json
 ```
+
+Buat campaign, ad set, dan ad placeholder dalam status `PAUSED` dari creative ID:
+
+```powershell
+python src/main.py create-paused-draft-ad `
+  --creative-id 1496767121939472 `
+  --campaign-name "AI Draft - Placeholder Campaign" `
+  --adset-name "AI Draft - Placeholder Ad Set" `
+  --ad-name "AI Draft - Placeholder Ad" `
+  --daily-budget 50000 `
+  --country ID
+```
+
+Cek plan tanpa kirim write request:
+
+```powershell
+python src/main.py create-paused-draft-ad `
+  --creative-id 1496767121939472 `
+  --dry-run
+```
+
+## Telegram Bot Lokal
+
+Tambahkan token bot dan user id kamu ke `.env`:
+
+```text
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ALLOWED_USER_IDS=
+TELEGRAM_VERIFY_SSL=true
+```
+
+Kalau Python lokal gagal SSL ke Telegram saat development, set sementara:
+
+```text
+TELEGRAM_VERIFY_SSL=false
+```
+
+Untuk production, pakai `true`.
+
+Untuk cari user id:
+
+1. Kirim `/start` ke bot Telegram.
+2. Jalankan:
+
+```powershell
+python src/main.py telegram-updates
+```
+
+Isi `TELEGRAM_ALLOWED_USER_IDS` dengan `user_id` yang muncul.
+
+Cek token bot:
+
+```powershell
+python src/main.py telegram-whoami
+```
+
+Jalankan bot lokal:
+
+```powershell
+python src/main.py telegram-bot
+```
+
+Command Telegram awal:
+
+```text
+/id
+/draft product | offer | audience | landing_url
+```
+
+Contoh:
+
+```text
+/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
+```
+
+Bot akan membuat draft JSON dan placeholder image lokal. Push ke Meta tetap dilakukan manual dari terminal dengan command yang diberikan bot.
 
 Mode verbose kalau butuh debug log di terminal:
 

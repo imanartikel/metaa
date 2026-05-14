@@ -66,6 +66,15 @@ class AdCreative:
     response_log_path: Path | None
 
 
+@dataclass(frozen=True)
+class PausedDraftAd:
+    campaign_id: str
+    adset_id: str
+    ad_id: str
+    raw_responses: dict[str, dict[str, Any]]
+    response_log_paths: dict[str, Path | None]
+
+
 def require_paused_status(status: str | None = None) -> str:
     """Future creation helper: all campaign/adset/ad creation must start PAUSED."""
     if status is None:
@@ -225,6 +234,147 @@ class MetaAPI:
             creative_id=str(creative_id),
             raw_response=response,
             response_log_path=self.last_response_log_path,
+        )
+
+    def create_paused_campaign(
+        self,
+        *,
+        ad_account_id: str,
+        name: str,
+        objective: str = "OUTCOME_TRAFFIC",
+    ) -> tuple[str, dict[str, Any], Path | None]:
+        account_path = self._ad_account_path(ad_account_id)
+        status = require_paused_status()
+        logger.info("Creating PAUSED campaign name=%s account=%s", name, account_path)
+        response = self._request(
+            "POST",
+            f"{account_path}/campaigns",
+            data={
+                "access_token": self.config.access_token,
+                "name": name,
+                "objective": objective,
+                "status": status,
+                "special_ad_categories": json.dumps([]),
+                "is_adset_budget_sharing_enabled": "false",
+            },
+            include_default_access_token=False,
+        )
+        campaign_id = _required_response_id(response, "campaign")
+        return campaign_id, response, self.last_response_log_path
+
+    def create_paused_adset(
+        self,
+        *,
+        ad_account_id: str,
+        campaign_id: str,
+        name: str,
+        daily_budget: int,
+        country: str = "ID",
+        age_min: int = 18,
+        age_max: int = 65,
+        optimization_goal: str = "LINK_CLICKS",
+        billing_event: str = "IMPRESSIONS",
+        bid_strategy: str = "LOWEST_COST_WITHOUT_CAP",
+    ) -> tuple[str, dict[str, Any], Path | None]:
+        account_path = self._ad_account_path(ad_account_id)
+        status = require_paused_status()
+        targeting = {
+            "geo_locations": {"countries": [country.upper()]},
+            "age_min": age_min,
+            "age_max": age_max,
+            "targeting_automation": {"advantage_audience": 0},
+        }
+
+        logger.info("Creating PAUSED ad set name=%s campaign=%s", name, campaign_id)
+        response = self._request(
+            "POST",
+            f"{account_path}/adsets",
+            data={
+                "access_token": self.config.access_token,
+                "name": name,
+                "campaign_id": campaign_id,
+                "daily_budget": str(daily_budget),
+                "billing_event": billing_event,
+                "optimization_goal": optimization_goal,
+                "bid_strategy": bid_strategy,
+                "destination_type": "WEBSITE",
+                "targeting": json.dumps(targeting),
+                "status": status,
+            },
+            include_default_access_token=False,
+        )
+        adset_id = _required_response_id(response, "ad set")
+        return adset_id, response, self.last_response_log_path
+
+    def create_paused_ad(
+        self,
+        *,
+        ad_account_id: str,
+        adset_id: str,
+        creative_id: str,
+        name: str,
+    ) -> tuple[str, dict[str, Any], Path | None]:
+        account_path = self._ad_account_path(ad_account_id)
+        status = require_paused_status()
+        logger.info("Creating PAUSED ad name=%s adset=%s creative=%s", name, adset_id, creative_id)
+        response = self._request(
+            "POST",
+            f"{account_path}/ads",
+            data={
+                "access_token": self.config.access_token,
+                "name": name,
+                "adset_id": adset_id,
+                "creative": json.dumps({"creative_id": creative_id}),
+                "status": status,
+            },
+            include_default_access_token=False,
+        )
+        ad_id = _required_response_id(response, "ad")
+        return ad_id, response, self.last_response_log_path
+
+    def create_paused_draft_ad(
+        self,
+        *,
+        ad_account_id: str,
+        creative_id: str,
+        campaign_name: str,
+        adset_name: str,
+        ad_name: str,
+        daily_budget: int,
+        country: str = "ID",
+    ) -> PausedDraftAd:
+        campaign_id, campaign_response, campaign_log = self.create_paused_campaign(
+            ad_account_id=ad_account_id,
+            name=campaign_name,
+        )
+        adset_id, adset_response, adset_log = self.create_paused_adset(
+            ad_account_id=ad_account_id,
+            campaign_id=campaign_id,
+            name=adset_name,
+            daily_budget=daily_budget,
+            country=country,
+        )
+        ad_id, ad_response, ad_log = self.create_paused_ad(
+            ad_account_id=ad_account_id,
+            adset_id=adset_id,
+            creative_id=creative_id,
+            name=ad_name,
+        )
+
+        return PausedDraftAd(
+            campaign_id=campaign_id,
+            adset_id=adset_id,
+            ad_id=ad_id,
+            raw_responses={
+                "campaign": campaign_response,
+                "adset": adset_response,
+                "ad": ad_response,
+            },
+            response_log_paths={
+                "campaign": campaign_log,
+                "adset": adset_log,
+                "ad": ad_log,
+            },
         )
 
     def _request(
@@ -498,3 +648,12 @@ def _safe_str(value: Any) -> str | None:
     if value is None:
         return None
     return str(value)
+
+
+def _required_response_id(response: dict[str, Any], object_name: str) -> str:
+    object_id = response.get("id")
+    if not object_id:
+        raise MetaAPIError(
+            f"{object_name.title()} creation succeeded but no id was found in the response."
+        )
+    return str(object_id)

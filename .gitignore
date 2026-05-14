@@ -10,8 +10,12 @@ venv/
 output/logs/*.json
 output/logs/*.log
 output/drafts/*.json
+output/draft_ads/*.json
 output/creative_*.json
 !output/logs/.gitkeep
+
+# Telegram-generated local briefs can contain business inputs.
+input/telegram/*.json
 
 # Generated ad assets are local runtime artifacts.
 assets/generated/

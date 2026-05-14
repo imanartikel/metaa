@@ -7,8 +7,10 @@ from pathlib import Path
 
 from config import ConfigError, load_config, setup_logging
 from create_creative import run_create_creative
+from create_paused_draft import run_create_paused_draft
 from draft_package import run_create_creative_from_draft, run_draft_package
 from meta_api import MetaAPI, MetaAPIError
+from telegram_bot import run_telegram_bot, run_telegram_updates, run_telegram_whoami
 from test_connection import run_account_check, run_connection_test, run_whoami
 from upload_image import run_upload_image
 
@@ -111,6 +113,58 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print Meta creative payload only. Does not upload or create creative.",
     )
 
+    paused_draft_parser = subparsers.add_parser(
+        "create-paused-draft-ad",
+        help="Create a PAUSED campaign, ad set, and ad from an existing creative.",
+    )
+    paused_draft_parser.add_argument("--creative-id", required=True, help="Existing Meta ad creative ID.")
+    paused_draft_parser.add_argument(
+        "--campaign-name",
+        default="AI Draft - Placeholder Campaign",
+        help="Campaign name visible in Meta Ads Manager.",
+    )
+    paused_draft_parser.add_argument(
+        "--adset-name",
+        default="AI Draft - Placeholder Ad Set",
+        help="Ad set name visible in Meta Ads Manager.",
+    )
+    paused_draft_parser.add_argument(
+        "--ad-name",
+        default="AI Draft - Placeholder Ad",
+        help="Ad name visible in Meta Ads Manager.",
+    )
+    paused_draft_parser.add_argument(
+        "--daily-budget",
+        type=int,
+        default=50000,
+        help="Ad set daily budget in account currency minor/basic units. Default: 50000.",
+    )
+    paused_draft_parser.add_argument(
+        "--country",
+        default="ID",
+        help="Two-letter country code for placeholder targeting. Default: ID.",
+    )
+    paused_draft_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print planned payload only. Does not create anything.",
+    )
+
+    subparsers.add_parser(
+        "telegram-whoami",
+        help="Validate Telegram bot token and show bot identity.",
+    )
+
+    subparsers.add_parser(
+        "telegram-updates",
+        help="Show recent Telegram messages so you can find your user id.",
+    )
+
+    subparsers.add_parser(
+        "telegram-bot",
+        help="Run local Telegram polling bot for draft package creation.",
+    )
+
     return parser
 
 
@@ -166,6 +220,28 @@ def main(argv: list[str] | None = None) -> int:
                 draft_path=Path(args.draft_path),
                 dry_run=args.dry_run,
             )
+
+        if args.command == "create-paused-draft-ad":
+            return run_create_paused_draft(
+                api,
+                config,
+                creative_id=args.creative_id,
+                campaign_name=args.campaign_name,
+                adset_name=args.adset_name,
+                ad_name=args.ad_name,
+                daily_budget=args.daily_budget,
+                country=args.country,
+                dry_run=args.dry_run,
+            )
+
+        if args.command == "telegram-whoami":
+            return run_telegram_whoami(config)
+
+        if args.command == "telegram-updates":
+            return run_telegram_updates(config)
+
+        if args.command == "telegram-bot":
+            return run_telegram_bot(config)
 
         parser.error(f"Unknown command: {args.command}")
         return 2

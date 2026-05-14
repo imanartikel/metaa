@@ -24,6 +24,9 @@ class AppConfig:
     app_id: str | None
     app_secret: str | None
     graph_api_version: str
+    telegram_bot_token: str | None
+    telegram_allowed_user_ids: set[int]
+    telegram_verify_ssl: bool
     request_timeout_seconds: int = 30
     max_retries: int = 3
     retry_backoff_seconds: float = 1.0
@@ -72,6 +75,9 @@ def load_config(env_path: str | Path | None = None) -> AppConfig:
         app_id=_env_value("META_APP_ID"),
         app_secret=_env_value("META_APP_SECRET"),
         graph_api_version=version,
+        telegram_bot_token=_env_value("TELEGRAM_BOT_TOKEN"),
+        telegram_allowed_user_ids=_parse_int_set(_env_value("TELEGRAM_ALLOWED_USER_IDS")),
+        telegram_verify_ssl=_parse_bool(_env_value("TELEGRAM_VERIFY_SSL"), default=True),
     )
 
 
@@ -85,6 +91,40 @@ def require_page_id(config: AppConfig) -> str:
     if not config.page_id:
         raise ConfigError("Missing META_PAGE_ID. It is required for ad creative creation.")
     return config.page_id
+
+
+def require_telegram_bot_token(config: AppConfig) -> str:
+    if not config.telegram_bot_token:
+        raise ConfigError("Missing TELEGRAM_BOT_TOKEN. It is required for Telegram commands.")
+    return config.telegram_bot_token
+
+
+def _parse_int_set(value: str | None) -> set[int]:
+    if not value:
+        return set()
+
+    user_ids: set[int] = set()
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        try:
+            user_ids.add(int(item))
+        except ValueError as exc:
+            raise ConfigError(f"Invalid TELEGRAM_ALLOWED_USER_IDS value: {item}") from exc
+    return user_ids
+
+
+def _parse_bool(value: str | None, *, default: bool) -> bool:
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    raise ConfigError(f"Invalid boolean value: {value}")
 
 
 def setup_logging(logs_dir: Path, *, verbose: bool = False) -> None:
