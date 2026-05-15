@@ -268,7 +268,6 @@ Command Telegram:
 
 ```text
 /id
-/draft product | offer | audience | landing_url
 /draft product | offer | audience | landing_url | budget | gender
 /list_drafts
 /preview d1
@@ -279,7 +278,6 @@ Command Telegram:
 Contoh:
 
 ```text
-/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all
 /list_drafts
 /preview d1

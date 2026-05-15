@@ -223,14 +223,12 @@ def _help_text(user_id: int) -> str:
         f"user_id kamu: {user_id}\n\n"
         "Commands:\n"
         "/id - tampilkan user id\n"
-        "/draft product | offer | audience | landing_url\n"
         "/draft product | offer | audience | landing_url | budget | gender\n"
         "/list_drafts - lihat 5 draft terbaru\n"
         "/preview d1 - lihat copy draft\n"
         "/attach_image d1 | filename.jpg - pakai gambar manual dari assets/manual\n"
         "/push_draft d1 - upload + create creative + create PAUSED ad\n\n"
         "Contoh:\n"
-        "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all\n"
         "/list_drafts\n"
         "/preview d1\n"
@@ -242,7 +240,7 @@ def _help_text(user_id: int) -> str:
 def _parse_draft_command(text: str) -> dict[str, Any]:
     body = text.removeprefix("/draft").strip()
     parts = [part.strip() for part in body.split("|")]
-    if len(parts) not in {4, 6, 7} or not all(parts):
+    if len(parts) not in {6, 7} or not all(parts):
         raise ValueError(
             "Format /draft salah. Pakai: /draft product | offer | audience | landing_url | budget | gender"
         )
@@ -280,9 +278,6 @@ def _parse_draft_command(text: str) -> dict[str, Any]:
                 "gender": "all",
             }
         )
-    else:
-        product_name, offer, audience, landing_url = parts
-
     brief = {
         "product_name": product_name,
         "offer": offer,
