@@ -206,11 +206,12 @@ def _handle_text_command(config: AppConfig, *, user_id: int, text: str) -> str:
         return (
             "Draft package dibuat.\n"
             f"draft_id: {draft.get('draft_id')}\n"
+            f"alias: {_alias_for_draft_path(config, draft_path)}\n"
             f"source: {draft.get('source', {}).get('type')}\n"
             f"draft_json: {draft_path}\n"
             f"placeholder_image: {image_path}\n\n"
-            f"Review: /preview {draft.get('draft_id')}\n"
-            f"Push PAUSED ke Meta: /push_draft {draft.get('draft_id')}"
+            f"Review: /preview {_alias_for_draft_path(config, draft_path)}\n"
+            f"Push PAUSED ke Meta: /push_draft {_alias_for_draft_path(config, draft_path)}"
         )
 
     return "Command belum dikenal.\n\n" + _help_text(user_id)
@@ -225,15 +226,16 @@ def _help_text(user_id: int) -> str:
         "/draft product | offer | audience | landing_url\n"
         "/draft product | offer | audience | landing_url | budget | gender\n"
         "/list_drafts - lihat 5 draft terbaru\n"
-        "/preview draft_id - lihat copy draft\n"
-        "/attach_image draft_id | filename.jpg - pakai gambar manual dari assets/manual\n"
-        "/push_draft draft_id - upload + create creative + create PAUSED ad\n\n"
+        "/preview d1 - lihat copy draft\n"
+        "/attach_image d1 | filename.jpg - pakai gambar manual dari assets/manual\n"
+        "/push_draft d1 - upload + create creative + create PAUSED ad\n\n"
         "Contoh:\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all\n"
-        "/preview draft_20260514T231222Z_bengkel_mobil_wl\n"
-        "/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg\n"
-        "/push_draft draft_20260514T231222Z_bengkel_mobil_wl"
+        "/list_drafts\n"
+        "/preview d1\n"
+        "/attach_image d1 | bengkel_wl_01.jpg\n"
+        "/push_draft d1"
     )
 
 
@@ -353,10 +355,11 @@ def _list_drafts(config: AppConfig) -> str:
     for path in draft_paths:
         try:
             draft = _load_json(path)
+            alias = _alias_for_draft_path(config, path)
             source = draft.get("source", {}).get("type", "unknown")
             creative = draft.get("creative", {})
             headline = creative.get("headline", "no headline")
-            lines.append(f"- {draft.get('draft_id')} | {source} | {headline}")
+            lines.append(f"- {alias} | {draft.get('draft_id')} | {source} | {headline}")
         except Exception:
             lines.append(f"- {path.stem} | unreadable")
     return "\n".join(lines)
@@ -521,6 +524,10 @@ def _resolve_draft_path(config: AppConfig, draft_ref: str) -> Path:
     if not draft_ref:
         raise ValueError("Masukkan draft_id. Contoh: /preview draft_...")
 
+    alias_path = _resolve_draft_alias(config, draft_ref)
+    if alias_path:
+        return alias_path
+
     candidate = Path(draft_ref)
     if candidate.exists():
         return candidate
@@ -532,6 +539,33 @@ def _resolve_draft_path(config: AppConfig, draft_ref: str) -> Path:
     if not path.exists():
         raise FileNotFoundError(f"Draft tidak ditemukan: {path}")
     return path
+
+
+def _resolve_draft_alias(config: AppConfig, draft_ref: str) -> Path | None:
+    normalized = draft_ref.strip().lower()
+    if not normalized.startswith("d"):
+        return None
+    number_text = normalized[1:]
+    if not number_text.isdigit():
+        return None
+
+    index = int(number_text)
+    if index <= 0:
+        return None
+
+    draft_paths = _latest_draft_paths(config, limit=max(index, 20))
+    if index > len(draft_paths):
+        raise FileNotFoundError(f"Alias tidak ditemukan: {draft_ref}")
+    return draft_paths[index - 1]
+
+
+def _alias_for_draft_path(config: AppConfig, draft_path: Path) -> str:
+    draft_paths = _latest_draft_paths(config, limit=20)
+    resolved = draft_path.resolve()
+    for index, path in enumerate(draft_paths, start=1):
+        if path.resolve() == resolved:
+            return f"d{index}"
+    return draft_path.stem
 
 
 def _load_json(path: Path) -> dict[str, Any]:

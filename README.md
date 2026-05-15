@@ -271,9 +271,9 @@ Command Telegram:
 /draft product | offer | audience | landing_url
 /draft product | offer | audience | landing_url | budget | gender
 /list_drafts
-/preview draft_id
-/attach_image draft_id | filename.jpg
-/push_draft draft_id
+/preview d1
+/attach_image d1 | filename.jpg
+/push_draft d1
 ```
 
 Contoh:
@@ -282,9 +282,9 @@ Contoh:
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all
 /list_drafts
-/preview draft_20260514T231222Z_bengkel_mobil_wl
-/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg
-/push_draft draft_20260514T231222Z_bengkel_mobil_wl
+/preview d1
+/attach_image d1 | bengkel_wl_01.jpg
+/push_draft d1
 ```
 
 Bot akan membuat:
@@ -310,13 +310,13 @@ assets/manual/
 File gambar di folder ini tidak ikut Git. Pakai command Telegram:
 
 ```text
-/attach_image draft_id | filename.jpg
+/attach_image d1 | filename.jpg
 ```
 
 Contoh:
 
 ```text
-/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg
+/attach_image d1 | bengkel_wl_01.jpg
 ```
 
 Setelah attach, `/push_draft` akan upload gambar manual itu ke Meta.
