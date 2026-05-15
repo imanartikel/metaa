@@ -115,6 +115,8 @@ meta-ad-drafter/
     brief.example.json
   assets/
     test.jpg
+    manual/
+      README.md
   output/
     logs/
   src/
@@ -129,7 +131,7 @@ meta-ad-drafter/
     upload_image.py
 ```
 
-Runtime files seperti `.env`, logs, generated drafts, dan generated images di-ignore oleh Git.
+Runtime files seperti `.env`, logs, generated drafts, generated images, dan manual images di-ignore oleh Git.
 
 ## Quick Health Check
 
@@ -270,6 +272,7 @@ Command Telegram:
 /draft product | offer | audience | landing_url | budget | gender
 /list_drafts
 /preview draft_id
+/attach_image draft_id | filename.jpg
 /push_draft draft_id
 ```
 
@@ -280,6 +283,7 @@ Contoh:
 /draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all
 /list_drafts
 /preview draft_20260514T231222Z_bengkel_mobil_wl
+/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg
 /push_draft draft_20260514T231222Z_bengkel_mobil_wl
 ```
 
@@ -294,6 +298,28 @@ assets/generated/draft_*.jpg
 Kalau `ANTHROPIC_API_KEY` ada di `.env`, Telegram `/draft` akan pakai Claude Haiku untuk copy dan creative direction. Kalau key kosong atau API error, bot fallback ke placeholder.
 
 `/push_draft` akan upload image, create creative, lalu create campaign/ad set/ad dalam status `PAUSED`. Command ini tidak pernah publish `ACTIVE`.
+
+## Manual Images
+
+Gambar iklan manual ditaruh di:
+
+```text
+assets/manual/
+```
+
+File gambar di folder ini tidak ikut Git. Pakai command Telegram:
+
+```text
+/attach_image draft_id | filename.jpg
+```
+
+Contoh:
+
+```text
+/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg
+```
+
+Setelah attach, `/push_draft` akan upload gambar manual itu ke Meta.
 
 Default targeting Telegram:
 

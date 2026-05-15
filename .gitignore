@@ -19,3 +19,7 @@ input/telegram/*.json
 
 # Generated ad assets are local runtime artifacts.
 assets/generated/
+
+# Manual ad images are local business assets. Keep only the README.
+assets/manual/*
+!assets/manual/README.md

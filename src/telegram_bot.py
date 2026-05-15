@@ -195,6 +195,10 @@ def _handle_text_command(config: AppConfig, *, user_id: int, text: str) -> str:
         draft_ref = text.removeprefix("/push_draft").strip()
         return _push_draft_to_meta(config, draft_ref)
 
+    if text.startswith("/attach_image"):
+        body = text.removeprefix("/attach_image").strip()
+        return _attach_manual_image(config, body)
+
     if text.startswith("/draft"):
         brief = _parse_draft_command(text)
         draft_path, image_path = _create_draft_from_telegram_brief(config, brief)
@@ -222,11 +226,13 @@ def _help_text(user_id: int) -> str:
         "/draft product | offer | audience | landing_url | budget | gender\n"
         "/list_drafts - lihat 5 draft terbaru\n"
         "/preview draft_id - lihat copy draft\n"
+        "/attach_image draft_id | filename.jpg - pakai gambar manual dari assets/manual\n"
         "/push_draft draft_id - upload + create creative + create PAUSED ad\n\n"
         "Contoh:\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com\n"
         "/draft Bengkel Mobil WL | Gratis cek kaki-kaki | Pemilik mobil Jakarta | https://example.com | 75000 | all\n"
         "/preview draft_20260514T231222Z_bengkel_mobil_wl\n"
+        "/attach_image draft_20260514T231222Z_bengkel_mobil_wl | bengkel_wl_01.jpg\n"
         "/push_draft draft_20260514T231222Z_bengkel_mobil_wl"
     )
 
@@ -378,7 +384,45 @@ def _preview_draft(config: AppConfig, draft_ref: str) -> str:
         f"budget: {ad_settings.get('daily_budget', 50000)}\n"
         f"target: {ad_settings.get('geo_preset', 'JAVA_BALI')} age {ad_settings.get('age_min', 25)}-{ad_settings.get('age_max', 65)} gender {ad_settings.get('gender', 'all')}\n"
         f"image: {image.get('path')}\n\n"
+        f"Attach manual image:\n/attach_image {draft.get('draft_id')} | filename.jpg\n\n"
         f"Push PAUSED ke Meta:\n/push_draft {draft.get('draft_id')}"
+    )
+
+
+def _attach_manual_image(config: AppConfig, body: str) -> str:
+    parts = [part.strip() for part in body.split("|", 1)]
+    if len(parts) != 2 or not all(parts):
+        raise ValueError("Format: /attach_image draft_id | filename.jpg")
+
+    draft_ref, filename = parts
+    if any(char in filename for char in ["\\", "/", ":"]):
+        raise ValueError("filename saja, tanpa path. Taruh file di assets/manual/.")
+
+    manual_path = config.project_root / "assets" / "manual" / filename
+    if not manual_path.exists() or not manual_path.is_file():
+        raise FileNotFoundError(f"Gambar tidak ditemukan: {manual_path}")
+    if manual_path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+        raise ValueError("Format gambar harus .jpg, .jpeg, atau .png")
+
+    draft_path = _resolve_draft_path(config, draft_ref)
+    draft = _load_json(draft_path)
+    draft["image"] = {
+        "provider": "manual",
+        "status": "attached",
+        "path": str(manual_path),
+        "filename": filename,
+    }
+
+    with draft_path.open("w", encoding="utf-8") as file:
+        json.dump(draft, file, indent=2, sort_keys=True)
+        file.write("\n")
+
+    return (
+        "Manual image attached.\n"
+        f"draft_id: {draft.get('draft_id')}\n"
+        f"image: {manual_path}\n\n"
+        f"Preview: /preview {draft.get('draft_id')}\n"
+        f"Push: /push_draft {draft.get('draft_id')}"
     )
 
 
