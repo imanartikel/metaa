@@ -53,10 +53,9 @@ def load_config(env_path: str | Path | None = None) -> AppConfig:
     if resolved_env_path.exists():
         load_dotenv(resolved_env_path)
     else:
-        raise ConfigError(
-            f"Could not find .env file at {resolved_env_path}. "
-            "Create one from .env.example and fill in your Meta credentials."
-        )
+        # Pada production (seperti Railway), credentials biasanya diset langsung sebagai
+        # system environment variables lewat dashboard, bukan lewat file .env lokal.
+        load_dotenv()
 
     logs_dir = root / "output" / "logs"
     output_dir = root / "output"
