@@ -47,7 +47,7 @@ def run_create_paused_draft(
     plan = {
         "campaign": {
             "name": campaign_name,
-            "objective": "OUTCOME_TRAFFIC",
+            "objective": config.meta_campaign_objective,
             "status": "PAUSED",
             "special_ad_categories": [],
             "is_adset_budget_sharing_enabled": False,
@@ -156,7 +156,7 @@ def create_paused_draft_ad_from_creative(
         plan = {
             "campaign": {
                 "name": campaign_name,
-                "objective": "OUTCOME_TRAFFIC",
+                "objective": config.meta_campaign_objective,
                 "status": "PAUSED",
             },
             "adset": {

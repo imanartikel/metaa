@@ -242,10 +242,11 @@ class MetaAPI:
         *,
         ad_account_id: str,
         name: str,
-        objective: str = "OUTCOME_TRAFFIC",
+        objective: str | None = None,
     ) -> tuple[str, dict[str, Any], Path | None]:
         account_path = self._ad_account_path(ad_account_id)
         status = require_paused_status()
+        resolved_objective = objective or self.config.meta_campaign_objective
         logger.info("Creating PAUSED campaign name=%s account=%s", name, account_path)
         response = self._request(
             "POST",
@@ -253,7 +254,7 @@ class MetaAPI:
             data={
                 "access_token": self.config.access_token,
                 "name": name,
-                "objective": objective,
+                "objective": resolved_objective,
                 "status": status,
                 "special_ad_categories": json.dumps([]),
                 "is_adset_budget_sharing_enabled": "false",

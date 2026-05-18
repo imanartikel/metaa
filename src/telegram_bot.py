@@ -200,7 +200,7 @@ def _handle_text_command(config: AppConfig, *, user_id: int, text: str) -> str:
         return _attach_manual_image(config, body)
 
     if text.startswith("/draft"):
-        brief = _parse_draft_command(text)
+        brief = _parse_draft_command(text, config)
         draft_path, image_path = _create_draft_from_telegram_brief(config, brief)
         draft = _load_json(draft_path)
         return (
@@ -237,7 +237,7 @@ def _help_text(user_id: int) -> str:
     )
 
 
-def _parse_draft_command(text: str) -> dict[str, Any]:
+def _parse_draft_command(text: str, config: AppConfig) -> dict[str, Any]:
     body = text.removeprefix("/draft").strip()
     parts = [part.strip() for part in body.split("|")]
     if len(parts) not in {6, 7} or not all(parts):
@@ -253,7 +253,7 @@ def _parse_draft_command(text: str) -> dict[str, Any]:
         "age_min": 25,
         "age_max": 65,
         "gender": "all",
-        "objective": "OUTCOME_TRAFFIC",
+        "objective": config.meta_campaign_objective,
         "optimization_goal": "LINK_CLICKS",
     }
 
