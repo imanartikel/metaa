@@ -279,6 +279,7 @@ class MetaAPI:
         optimization_goal: str = "LINK_CLICKS",
         billing_event: str = "IMPRESSIONS",
         bid_strategy: str = "LOWEST_COST_WITHOUT_CAP",
+        promoted_object: dict[str, Any] | None = None,
     ) -> tuple[str, dict[str, Any], Path | None]:
         account_path = self._ad_account_path(ad_account_id)
         status = require_paused_status()
@@ -301,21 +302,26 @@ class MetaAPI:
             targeting["genders"] = genders
 
         logger.info("Creating PAUSED ad set name=%s campaign=%s", name, campaign_id)
+        
+        request_data = {
+            "access_token": self.config.access_token,
+            "name": name,
+            "campaign_id": campaign_id,
+            "daily_budget": str(daily_budget),
+            "billing_event": billing_event,
+            "optimization_goal": optimization_goal,
+            "bid_strategy": bid_strategy,
+            "destination_type": "WEBSITE",
+            "targeting": json.dumps(targeting),
+            "status": status,
+        }
+        if promoted_object:
+            request_data["promoted_object"] = json.dumps(promoted_object)
+
         response = self._request(
             "POST",
             f"{account_path}/adsets",
-            data={
-                "access_token": self.config.access_token,
-                "name": name,
-                "campaign_id": campaign_id,
-                "daily_budget": str(daily_budget),
-                "billing_event": billing_event,
-                "optimization_goal": optimization_goal,
-                "bid_strategy": bid_strategy,
-                "destination_type": "WEBSITE",
-                "targeting": json.dumps(targeting),
-                "status": status,
-            },
+            data=request_data,
             include_default_access_token=False,
         )
         adset_id = _required_response_id(response, "ad set")
@@ -361,6 +367,8 @@ class MetaAPI:
         age_min: int = 18,
         age_max: int = 65,
         genders: list[int] | None = None,
+        optimization_goal: str = "LINK_CLICKS",
+        promoted_object: dict[str, Any] | None = None,
     ) -> PausedDraftAd:
         campaign_id, campaign_response, campaign_log = self.create_paused_campaign(
             ad_account_id=ad_account_id,
@@ -376,6 +384,8 @@ class MetaAPI:
             age_min=age_min,
             age_max=age_max,
             genders=genders,
+            optimization_goal=optimization_goal,
+            promoted_object=promoted_object,
         )
         ad_id, ad_response, ad_log = self.create_paused_ad(
             ad_account_id=ad_account_id,

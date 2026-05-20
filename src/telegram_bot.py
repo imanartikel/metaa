@@ -250,6 +250,7 @@ def _parse_draft_command(text: str, config: AppConfig) -> dict[str, Any]:
             "Format /draft salah. Pakai: /draft product | offer | audience | landing_url | budget | gender"
         )
 
+    objective = config.meta_campaign_objective
     ad_settings = {
         "daily_budget": 50000,
         "country": "ID",
@@ -258,8 +259,8 @@ def _parse_draft_command(text: str, config: AppConfig) -> dict[str, Any]:
         "age_min": 25,
         "age_max": 65,
         "gender": "all",
-        "objective": config.meta_campaign_objective,
-        "optimization_goal": "LINK_CLICKS",
+        "objective": objective,
+        "optimization_goal": "OFFSITE_CONVERSIONS" if objective in ("OUTCOME_SALES", "OUTCOME_LEADS") else "LINK_CLICKS",
     }
 
     if len(parts) == 6:
@@ -478,6 +479,14 @@ def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
     age_min = int(ad_settings.get("age_min") or 25)
     age_max = int(ad_settings.get("age_max") or 65)
     gender = str(ad_settings.get("gender") or "all")
+    optimization_goal = str(ad_settings.get("optimization_goal") or "LINK_CLICKS")
+    
+    promoted_object = None
+    if config.meta_campaign_objective in ("OUTCOME_SALES", "OUTCOME_LEADS") and config.meta_pixel_id:
+        promoted_object = {
+            "pixel_id": config.meta_pixel_id,
+            "custom_event_type": "PURCHASE"
+        }
 
     safe_name = draft_id[:80]
     paused_result, paused_artifact = create_paused_draft_ad_from_creative(
@@ -493,6 +502,8 @@ def _push_draft_to_meta(config: AppConfig, draft_ref: str) -> str:
         age_min=age_min,
         age_max=age_max,
         gender=gender,
+        optimization_goal=optimization_goal,
+        promoted_object=promoted_object,
     )
 
     return (

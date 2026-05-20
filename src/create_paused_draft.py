@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from config import AppConfig, require_ad_account_id
 from meta_api import DEFAULT_JAVA_BALI_REGION_KEYS, MetaAPI
@@ -134,6 +135,8 @@ def create_paused_draft_ad_from_creative(
     age_max: int = 65,
     gender: str = "all",
     region_keys: list[str] | None = None,
+    optimization_goal: str = "LINK_CLICKS",
+    promoted_object: dict[str, Any] | None = None,
     plan: dict[str, object] | None = None,
 ):
     ad_account_id = require_ad_account_id(config)
@@ -150,6 +153,8 @@ def create_paused_draft_ad_from_creative(
         age_min=age_min,
         age_max=age_max,
         genders=genders,
+        optimization_goal=optimization_goal,
+        promoted_object=promoted_object,
     )
 
     if plan is None:
@@ -167,6 +172,8 @@ def create_paused_draft_ad_from_creative(
                 "age_min": age_min,
                 "age_max": age_max,
                 "gender": gender,
+                "optimization_goal": optimization_goal,
+                "promoted_object": promoted_object,
                 "status": "PAUSED",
             },
             "ad": {

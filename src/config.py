@@ -25,6 +25,7 @@ class AppConfig:
     app_secret: str | None
     graph_api_version: str
     meta_campaign_objective: str
+    meta_pixel_id: str | None
     telegram_bot_token: str | None
     telegram_allowed_user_ids: set[int]
     telegram_verify_ssl: bool
@@ -79,6 +80,7 @@ def load_config(env_path: str | Path | None = None) -> AppConfig:
         app_secret=_env_value("META_APP_SECRET"),
         graph_api_version=version,
         meta_campaign_objective=_env_value("META_CAMPAIGN_OBJECTIVE") or "OUTCOME_TRAFFIC",
+        meta_pixel_id=_env_value("META_PIXEL_ID"),
         telegram_bot_token=_env_value("TELEGRAM_BOT_TOKEN"),
         telegram_allowed_user_ids=_parse_int_set(_env_value("TELEGRAM_ALLOWED_USER_IDS")),
         telegram_verify_ssl=_parse_bool(_env_value("TELEGRAM_VERIFY_SSL"), default=True),
