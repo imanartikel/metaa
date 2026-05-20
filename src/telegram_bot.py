@@ -178,6 +178,8 @@ def _handle_update(client: TelegramClient, config: AppConfig, update: dict[str, 
             reply = f"Error Meta API:\n{exc}\nSubcode: {getattr(exc, 'error_subcode')}"
         else:
             reply = f"Error: {exc}"
+            if hasattr(exc, "raw_error") and getattr(exc, "raw_error"):
+                reply += f"\n\nRaw API Error Data:\n{getattr(exc, 'raw_error')}"
 
     client.send_message(chat_id=chat_id, text=reply)
 

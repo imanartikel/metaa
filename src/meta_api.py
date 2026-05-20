@@ -43,6 +43,7 @@ class MetaAPIError(RuntimeError):
         error_user_title: str | None = None,
         error_user_msg: str | None = None,
         response_log_path: Path | None = None,
+        raw_error: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -51,6 +52,7 @@ class MetaAPIError(RuntimeError):
         self.error_user_title = error_user_title
         self.error_user_msg = error_user_msg
         self.response_log_path = response_log_path
+        self.raw_error = raw_error
 
 
 @dataclass(frozen=True)
@@ -594,6 +596,7 @@ class MetaAPI:
             error_user_title=error_user_title,
             error_user_msg=error_user_msg,
             response_log_path=self.last_response_log_path,
+            raw_error=error,
         )
 
     def _sleep_before_retry(self, attempt: int, status_code: int | None) -> None:
