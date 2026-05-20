@@ -172,7 +172,12 @@ def _handle_update(client: TelegramClient, config: AppConfig, update: dict[str, 
         reply = _handle_text_command(config, user_id=user_id, text=text)
     except Exception as exc:
         logger.exception("Telegram command failed")
-        reply = f"Error: {exc}"
+        if hasattr(exc, "error_user_msg") and exc.error_user_msg:
+            reply = f"Error Meta API:\n{exc}\nDetail: {exc.error_user_msg}\nTitle: {getattr(exc, 'error_user_title', '')}"
+        elif hasattr(exc, "error_subcode") and getattr(exc, "error_subcode"):
+            reply = f"Error Meta API:\n{exc}\nSubcode: {getattr(exc, 'error_subcode')}"
+        else:
+            reply = f"Error: {exc}"
 
     client.send_message(chat_id=chat_id, text=reply)
 
