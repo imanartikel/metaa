@@ -310,9 +310,7 @@ class MetaAPI:
             "name": name,
             "campaign_id": campaign_id,
             "daily_budget": str(daily_budget),
-            "billing_event": billing_event,
             "optimization_goal": optimization_goal,
-            "bid_strategy": bid_strategy,
             "targeting": json.dumps(targeting),
             "status": status,
         }
