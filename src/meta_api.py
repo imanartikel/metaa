@@ -311,12 +311,14 @@ class MetaAPI:
             "billing_event": billing_event,
             "optimization_goal": optimization_goal,
             "bid_strategy": bid_strategy,
-            "destination_type": "WEBSITE",
             "targeting": json.dumps(targeting),
             "status": status,
         }
+        
         if promoted_object:
             request_data["promoted_object"] = json.dumps(promoted_object)
+        else:
+            request_data["destination_type"] = "WEBSITE"
 
         response = self._request(
             "POST",
